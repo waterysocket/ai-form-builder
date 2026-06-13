@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { authRouter } from './routes/auth'
+import { authRouterWithMe } from './routes/auth'
 import { authMiddleware, type AuthVariables } from './middleware/auth'
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>()
@@ -9,7 +10,7 @@ app.get('/api/health', (c) => c.json({ status: 'ok' }))
 import { surveysRouter } from './routes/surveys'
 
 // Mount the authentication router
-app.route('/api/auth', authRouter)
+app.route('/api/auth', authRouterWithMe)
 
 // Mount the surveys router
 app.route('/api/surveys', surveysRouter)

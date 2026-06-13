@@ -111,8 +111,7 @@ html, body, #root {
       radial-gradient(ellipse at 50% 5%, rgba(0, 84, 95, 0.12) 0%, transparent 45%);
   }
   .glass {
-    background: rgba(12, 52, 44, 0.65);
-    backdrop-filter: blur(18px);
+    background: rgba(12, 52, 44, 0.85);
     border: 1px solid rgba(227, 239, 38, 0.12);
   }
   .glass-light {

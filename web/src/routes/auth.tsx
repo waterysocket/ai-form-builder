@@ -25,7 +25,7 @@ function AuthPage() {
     if (user) navigate({ to: "/builder/dashboard" });
   }, [user, navigate]);
 
-  const submit = (e: React.FormEvent) => {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!email || !pw || (tab === "up" && !name)) {
@@ -37,27 +37,36 @@ function AuthPage() {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) throw new Error('Failed to send magic link');
+      const data = await res.json();
+      
+      // Simulate clicking the magic link
+      const verifyRes = await fetch(`/api/auth/verify?token=${data.token}`);
+      if (!verifyRes.ok) throw new Error('Verification failed');
+      const verifyData = await verifyRes.json();
+      
+      setSuccess(true);
+      signIn(email, name || undefined); // still update local state for UI
+      setTimeout(() => navigate({ to: "/builder/dashboard" }), 700);
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+    } finally {
       setLoading(false);
-      if (tab === "up") {
-        setSuccess(true);
-        setTimeout(() => { signIn(email, name); navigate({ to: "/builder/dashboard" }); }, 700);
-      } else {
-        signIn(email, name || undefined);
-        navigate({ to: "/builder/dashboard" });
-      }
-    }, 900);
+    }
   };
 
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left — Form panel */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 bg-surface-base relative z-10 overflow-y-auto flex flex-col">
-        {/* Subtle noise/mesh overlay */}
-        <div className="absolute inset-0 bg-mesh-gradient pointer-events-none" />
-        <div className="absolute inset-0 bg-dot-grid opacity-20 pointer-events-none" />
+      <div className="w-full lg:w-[480px] xl:w-[520px] shrink-0 bg-surface-base relative z-10 overflow-y-scroll flex flex-col">
 
-        <div className="flex-1 flex flex-col justify-center px-8 sm:px-14 py-12 relative min-h-max">
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-14 py-12 relative min-h-full">
           <Link to="/" className="inline-block mb-10">
             <Logo size={32} />
           </Link>
@@ -99,25 +108,29 @@ function AuthPage() {
             </div>
           )}
 
-          <form onSubmit={submit} className="mt-7 space-y-5">
+          <form onSubmit={submit} className="mt-7 space-y-5" autoComplete="off">
             {tab === "up" && (
               <Field label="Full name">
                 <input
+                  name="fullname"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   type="text"
                   placeholder="Jane Doe"
                   className={inputCls}
+                  autoComplete="off"
                 />
               </Field>
             )}
             <Field label="Email address">
               <input
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="you@example.com"
                 className={inputCls}
+                autoComplete="email"
               />
             </Field>
             <Field
@@ -132,11 +145,13 @@ function AuthPage() {
             >
               <div className="relative">
                 <input
+                  name="password"
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
                   type={showPw ? "text" : "password"}
                   placeholder="••••••••"
                   className={inputCls}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -213,7 +228,7 @@ function AuthPage() {
 }
 
 const inputCls =
-  "w-full px-4 py-3 rounded-xl bg-surface-elevated border border-border-subtle focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none text-sm text-text-primary placeholder:text-text-muted transition";
+  "w-full px-4 py-3 rounded-xl bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-sm text-text-primary placeholder:text-text-muted";
 
 function Field({
   label,

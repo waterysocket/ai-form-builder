@@ -95,3 +95,13 @@ authRouter.post('/logout', async (c) => {
 
   return c.json({ message: 'Logged out successfully' })
 })
+
+import { authMiddleware, AuthVariables } from '../middleware/auth'
+
+export const authRouterWithMe = new Hono<{ Bindings: Env; Variables: AuthVariables }>()
+authRouterWithMe.route('/', authRouter)
+
+authRouterWithMe.get('/me', authMiddleware, (c) => {
+  const user = c.get('user')
+  return c.json({ user })
+})
