@@ -24,12 +24,12 @@ const TYPES: { v: QuestionType; label: string; icon: string }[] = [
 ];
 
 const PRESETS = [
+  { name: "FormCraft", primaryColor: "#E3EF26", backgroundColor: "#06231D", cardColor: "#0C342C", textColor: "#FFFDEE" },
   { name: "Midnight", primaryColor: "#6C63FF", backgroundColor: "#0D0D14", cardColor: "#13131F", textColor: "#F0F0FF" },
   { name: "Clean White", primaryColor: "#111827", backgroundColor: "#FFFFFF", cardColor: "#F9FAFB", textColor: "#111827" },
   { name: "Forest Green", primaryColor: "#22C55E", backgroundColor: "#0A1A12", cardColor: "#10261A", textColor: "#E8F5EE" },
   { name: "Ocean Blue", primaryColor: "#3B82F6", backgroundColor: "#0A1424", cardColor: "#101F35", textColor: "#E8EFFC" },
   { name: "Sunset Coral", primaryColor: "#FF6584", backgroundColor: "#180D14", cardColor: "#28131C", textColor: "#FFE8EE" },
-  { name: "Monochrome", primaryColor: "#FAFAFA", backgroundColor: "#1A1A1A", cardColor: "#262626", textColor: "#FAFAFA" },
 ];
 
 function BuilderPage() {
@@ -68,8 +68,8 @@ function BuilderPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface-base text-text-primary">
       {/* TOP NAV */}
-      <header className="h-14 border-b border-border-subtle flex items-center px-4 gap-3 bg-surface-base z-30">
-        <Link to="/builder/dashboard" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
+      <header className="h-14 border-b border-border-subtle flex items-center px-4 gap-3 glass z-30">
+        <Link to="/builder/dashboard" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-brand transition">
           <ArrowLeft className="w-4 h-4" /> Dashboard
         </Link>
         <div className="h-5 w-px bg-border-subtle" />
@@ -78,25 +78,25 @@ function BuilderPage() {
             onChange={(e) => update(survey.id, { title: e.target.value })}
             onBlur={() => setEditingTitle(false)}
             onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)}
-            className="bg-surface-elevated border border-brand outline-none px-2 py-1 rounded text-sm font-medium min-w-[200px]" />
+            className="bg-surface-elevated border border-brand outline-none px-3 py-1.5 rounded-lg text-sm font-medium min-w-[200px]" />
         ) : (
-          <button onClick={() => setEditingTitle(true)} className="text-sm font-medium px-2 py-1 rounded hover:bg-surface-elevated">
+          <button onClick={() => setEditingTitle(true)} className="text-sm font-semibold px-2 py-1 rounded-lg hover:bg-surface-elevated transition">
             {survey.title}
           </button>
         )}
         <div className="ml-auto flex items-center gap-2">
           <a href={`/s/${survey.publicId}`} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border border-border-subtle hover:bg-surface-elevated">
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm btn-outline">
             <Eye className="w-3.5 h-3.5" /> Preview
           </a>
-          <button onClick={handleShare} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-brand text-white hover:shadow-brand-glow">
+          <button onClick={handleShare} className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm btn-brand">
             <Share2 className="w-3.5 h-3.5" /> Share
           </button>
-          <button onClick={handleSave} className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary">
+          <button onClick={handleSave} className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition">
             <MoreHorizontal className="w-4 h-4" />
           </button>
           <div className="ml-2 text-xs text-text-muted flex items-center gap-1.5 min-w-[68px]">
-            {saving ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</> : <><Check className="w-3 h-3 text-success" /> Saved</>}
+            {saving ? <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</> : <><Check className="w-3 h-3 text-brand" /> Saved</>}
           </div>
         </div>
       </header>
@@ -111,7 +111,7 @@ function BuilderPage() {
               <div className="p-3 flex gap-1 border-b border-border-subtle">
                 {(["questions", "style", "settings"] as const).map((t) => (
                   <button key={t} onClick={() => setTab(t)}
-                    className={`flex-1 py-1.5 text-xs font-medium rounded-md capitalize transition ${tab === t ? "bg-surface-elevated text-text-primary" : "text-text-secondary hover:text-text-primary"}`}>{t}</button>
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg capitalize transition ${tab === t ? "bg-brand text-surface-base" : "text-text-secondary hover:text-text-primary hover:bg-surface-elevated"}`}>{t}</button>
                 ))}
               </div>
               <div className="flex-1 overflow-y-auto">
@@ -129,10 +129,9 @@ function BuilderPage() {
           {/* AI floating btn */}
           {!aiOpen && (
             <button onClick={() => setAiOpen(true)}
-              className="fixed right-0 top-1/2 -translate-y-1/2 bg-brand text-white px-3 py-3 rounded-l-xl shadow-brand-glow flex flex-col items-center gap-1.5 text-xs font-medium z-20"
+              className="fixed right-0 top-1/2 -translate-y-1/2 btn-brand px-3 py-4 rounded-l-xl shadow-brand-glow flex flex-col items-center gap-2 text-xs font-bold z-20"
               style={{ writingMode: "vertical-rl" }}>
               <Sparkles className="w-4 h-4" />
-              <span style={{ writingMode: "horizontal-tb" }} className="hidden">AI</span>
               AI Assistant
             </button>
           )}
@@ -143,8 +142,8 @@ function BuilderPage() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 right-6 px-4 py-3 rounded-lg bg-surface-elevated border border-border-strong text-sm shadow-2xl flex items-center gap-2 z-50">
-          <Check className="w-4 h-4 text-success" /> {toast}
+        <div className="fixed bottom-6 right-6 px-4 py-3 rounded-xl glass border-brand/30 text-sm shadow-2xl flex items-center gap-2 z-50 text-text-primary">
+          <Check className="w-4 h-4 text-brand" /> {toast}
         </div>
       )}
     </div>
@@ -380,16 +379,16 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
         </FieldLabel>
       </div>
 
-      <div className="p-3 rounded-lg border border-brand/40 bg-brand/5 space-y-2.5">
+      <div className="p-3 rounded-xl glass border-brand/30 space-y-2.5">
         <div className="flex items-center gap-1.5">
-          <span className="px-1.5 py-0.5 rounded bg-brand-secondary/15 text-brand-secondary text-[9px] font-bold tracking-wider">✨ AI</span>
-          <div className="text-xs font-semibold">AI Style Generator</div>
+          <span className="px-2 py-0.5 rounded-full bg-brand/15 text-brand text-[9px] font-bold tracking-wider">✨ AI</span>
+          <div className="text-xs font-bold text-text-primary">AI Style Generator</div>
         </div>
         <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows={2}
           placeholder="Describe the vibe or aesthetic..."
-          className="w-full px-2.5 py-2 rounded-md bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs resize-none" />
+          className="w-full px-2.5 py-2 rounded-lg bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs resize-none" />
         <button onClick={generateStyle} disabled={generating}
-          className="w-full py-2 rounded-md bg-brand text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 disabled:opacity-60">
+          className="w-full py-2 rounded-lg btn-brand text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-60">
           {generating ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <><Wand2 className="w-3 h-3" /> Generate Style</>}
         </button>
       </div>
@@ -419,7 +418,7 @@ function SettingsPanel({ surveyId }: { surveyId: string }) {
         <div className="grid grid-cols-2 gap-1.5">
           {(["draft", "published"] as const).map((s) => (
             <button key={s} onClick={() => setSettings(surveyId, { status: s })}
-              className={`py-2 rounded-md text-xs capitalize ${survey.settings.status === s ? "bg-brand text-white" : "bg-surface-elevated text-text-secondary border border-border-subtle"}`}>
+              className={`py-2 rounded-lg text-xs font-semibold capitalize transition ${survey.settings.status === s ? "btn-brand" : "bg-surface-elevated text-text-secondary border border-border-subtle hover:border-brand"}`}>
               {s}
             </button>
           ))}
@@ -621,13 +620,13 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
     <div className="w-[360px] border-l border-border-subtle bg-surface-raised flex flex-col z-30 animate-in slide-in-from-right duration-300">
       <div className="h-14 px-4 flex items-center justify-between border-b border-border-subtle">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand-secondary grid place-items-center text-white text-xs"><Sparkles className="w-4 h-4" /></div>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand to-brand-dark grid place-items-center text-surface-base text-xs"><Sparkles className="w-4 h-4" /></div>
           <div>
-            <div className="text-sm font-semibold">AI Assistant</div>
+            <div className="text-sm font-bold text-text-primary">AI Assistant</div>
             <div className="text-[10px] text-text-muted">Powered by FormCraft AI</div>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded hover:bg-surface-elevated text-text-secondary"><X className="w-4 h-4" /></button>
+        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition"><X className="w-4 h-4" /></button>
       </div>
 
       <div className="p-3 border-b border-border-subtle">
@@ -645,16 +644,16 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start gap-2"}`}>
-            {m.role === "ai" && <div className="w-6 h-6 shrink-0 rounded-full bg-gradient-to-br from-brand to-brand-secondary grid place-items-center text-white text-[10px]">✨</div>}
-            <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${m.role === "user" ? "bg-brand text-white rounded-tr-sm" : "bg-surface-elevated text-text-primary rounded-tl-sm"}`}>
+            {m.role === "ai" && <div className="w-6 h-6 shrink-0 rounded-full bg-gradient-to-br from-brand to-brand-dark grid place-items-center text-surface-base text-[10px]">✨</div>}
+            <div className={`max-w-[85%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === "user" ? "bg-brand text-surface-base font-medium rounded-tr-sm" : "bg-surface-elevated text-text-primary rounded-tl-sm"}`}>
               {m.text}
             </div>
           </div>
         ))}
         {typing && (
           <div className="flex gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-secondary grid place-items-center text-white text-[10px]">✨</div>
-            <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm bg-surface-elevated flex gap-1">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-brand to-brand-dark grid place-items-center text-surface-base text-[10px]">✨</div>
+            <div className="px-3 py-2.5 rounded-2xl rounded-tl-sm bg-surface-elevated flex gap-1 items-center">
               <Dot delay={0} /><Dot delay={150} /><Dot delay={300} />
             </div>
           </div>
@@ -666,9 +665,9 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
           <textarea value={input} onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
             rows={1} placeholder="Type a message..."
-            className="flex-1 px-3 py-2 rounded-lg bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-sm resize-none max-h-32" />
+            className="flex-1 px-3 py-2 rounded-xl bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-sm resize-none max-h-32" />
           <button onClick={send} disabled={!input.trim()}
-            className="p-2.5 rounded-lg bg-brand text-white hover:shadow-brand-glow disabled:opacity-50">
+            className="p-2.5 rounded-xl btn-brand hover:shadow-brand-glow disabled:opacity-50">
             <Send className="w-4 h-4" />
           </button>
         </div>
