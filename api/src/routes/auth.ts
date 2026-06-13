@@ -44,10 +44,21 @@ authRouter.get('/verify', async (c) => {
   // Delete the one-time use magic link token
   await c.env.AUTH_KV.delete(`magic:${token}`)
 
+  // Look up an existing user in D1 or create one
+  let user = await c.env.DB.prepare('SELECT id, email FROM users WHERE email = ?').bind(email).first<{ id: string, email: string }>()
+  let userId = user?.id
+
+  if (!userId) {
+    userId = crypto.randomUUID()
+    await c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?)')
+      .bind(userId, email)
+      .run()
+  }
+
   // Create a new session
   const sessionToken = crypto.randomUUID()
   const sessionData = {
-    userId: crypto.randomUUID(), // In a real app, you might look up an existing user or create one
+    userId,
     email,
     createdAt: new Date().toISOString()
   }
@@ -58,7 +69,7 @@ authRouter.get('/verify', async (c) => {
   // Set the session cookie
   setCookie(c, 'session', sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: true, // In production this should be true. Localhost is considered secure context.
     sameSite: 'Lax',
     path: '/',
     maxAge: 604800

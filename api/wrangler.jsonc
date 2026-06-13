@@ -1,26 +1,30 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "sde-intern-task-api",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-05-22",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true
-  },
-
-  // Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
-  //
-  // Examples:
-  //
-  // "d1_databases": [
-  //   { "binding": "DB", "database_name": "survey-builder", "database_id": "<id>" }
-  // ],
-  //
-  "kv_namespaces": [
-    { "binding": "AUTH_KV", "id": "local-auth-kv" }
-  ]
-  //
-  // "r2_buckets": [
-  //   { "binding": "ASSETS", "bucket_name": "survey-builder-assets" }
-  // ]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "sde-intern-task-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-05-22",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true
+	},
+	// Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "ai-form-builder-db",
+			"database_id": "9119ddf3-b110-48b4-bf78-d93f0ee1c7ec"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "AUTH_KV",
+			"id": "857bd9a906004cce83621c0ccb61f5e0"
+		}
+	]
+	//
+	// "r2_buckets": [
+	//   { "binding": "ASSETS", "bucket_name": "survey-builder-assets" }
+	// ]
 }
