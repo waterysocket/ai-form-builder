@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
-  }
+  },
 
   // Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
   //
@@ -16,9 +16,9 @@
   //   { "binding": "DB", "database_name": "survey-builder", "database_id": "<id>" }
   // ],
   //
-  // "kv_namespaces": [
-  //   { "binding": "SESSIONS", "id": "<id>" }
-  // ],
+  "kv_namespaces": [
+    { "binding": "AUTH_KV", "id": "local-auth-kv" }
+  ]
   //
   // "r2_buckets": [
   //   { "binding": "ASSETS", "bucket_name": "survey-builder-assets" }
