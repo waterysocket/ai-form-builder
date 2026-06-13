@@ -9,38 +9,119 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as BuilderRouteImport } from './routes/builder'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SPublicIdRouteImport } from './routes/s.$publicId'
+import { Route as BuilderDashboardRouteImport } from './routes/builder.dashboard'
+import { Route as BuilderSurveyIdRouteImport } from './routes/builder.$surveyId'
 
+const BuilderRoute = BuilderRouteImport.update({
+  id: '/builder',
+  path: '/builder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SPublicIdRoute = SPublicIdRouteImport.update({
+  id: '/s/$publicId',
+  path: '/s/$publicId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderDashboardRoute = BuilderDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => BuilderRoute,
+} as any)
+const BuilderSurveyIdRoute = BuilderSurveyIdRouteImport.update({
+  id: '/$surveyId',
+  path: '/$surveyId',
+  getParentRoute: () => BuilderRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/builder': typeof BuilderRouteWithChildren
+  '/builder/$surveyId': typeof BuilderSurveyIdRoute
+  '/builder/dashboard': typeof BuilderDashboardRoute
+  '/s/$publicId': typeof SPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/builder': typeof BuilderRouteWithChildren
+  '/builder/$surveyId': typeof BuilderSurveyIdRoute
+  '/builder/dashboard': typeof BuilderDashboardRoute
+  '/s/$publicId': typeof SPublicIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/builder': typeof BuilderRouteWithChildren
+  '/builder/$surveyId': typeof BuilderSurveyIdRoute
+  '/builder/dashboard': typeof BuilderDashboardRoute
+  '/s/$publicId': typeof SPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/builder'
+    | '/builder/$surveyId'
+    | '/builder/dashboard'
+    | '/s/$publicId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/builder'
+    | '/builder/$surveyId'
+    | '/builder/dashboard'
+    | '/s/$publicId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/builder'
+    | '/builder/$surveyId'
+    | '/builder/dashboard'
+    | '/s/$publicId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  BuilderRoute: typeof BuilderRouteWithChildren
+  SPublicIdRoute: typeof SPublicIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/builder': {
+      id: '/builder'
+      path: '/builder'
+      fullPath: '/builder'
+      preLoaderRoute: typeof BuilderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +129,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/s/$publicId': {
+      id: '/s/$publicId'
+      path: '/s/$publicId'
+      fullPath: '/s/$publicId'
+      preLoaderRoute: typeof SPublicIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder/dashboard': {
+      id: '/builder/dashboard'
+      path: '/dashboard'
+      fullPath: '/builder/dashboard'
+      preLoaderRoute: typeof BuilderDashboardRouteImport
+      parentRoute: typeof BuilderRoute
+    }
+    '/builder/$surveyId': {
+      id: '/builder/$surveyId'
+      path: '/$surveyId'
+      fullPath: '/builder/$surveyId'
+      preLoaderRoute: typeof BuilderSurveyIdRouteImport
+      parentRoute: typeof BuilderRoute
+    }
   }
 }
 
+interface BuilderRouteChildren {
+  BuilderSurveyIdRoute: typeof BuilderSurveyIdRoute
+  BuilderDashboardRoute: typeof BuilderDashboardRoute
+}
+
+const BuilderRouteChildren: BuilderRouteChildren = {
+  BuilderSurveyIdRoute: BuilderSurveyIdRoute,
+  BuilderDashboardRoute: BuilderDashboardRoute,
+}
+
+const BuilderRouteWithChildren =
+  BuilderRoute._addFileChildren(BuilderRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  BuilderRoute: BuilderRouteWithChildren,
+  SPublicIdRoute: SPublicIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
