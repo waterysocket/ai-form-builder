@@ -9,23 +9,22 @@ publicRouter.get('/surveys/:id', async (c) => {
   const preview = c.req.query('preview') === 'true'
 
   // If preview=true, we don't require the survey to be published.
-  const query = preview 
-    ? 'SELECT * FROM surveys WHERE id = ?' 
+  const query = preview
+    ? 'SELECT * FROM surveys WHERE id = ?'
     : 'SELECT * FROM surveys WHERE id = ? AND is_published = 1'
 
-  const survey = await c.env.DB.prepare(query)
-    .bind(surveyId)
-    .first()
+  const survey = await c.env.DB.prepare(query).bind(surveyId).first()
 
   if (!survey) {
-    return c.json({ error: preview ? 'Survey not found' : 'Survey not found or not published' }, 404)
+    return c.json(
+      { error: preview ? 'Survey not found' : 'Survey not found or not published' },
+      404,
+    )
   }
 
   // Increment visits asynchronously
   c.executionCtx.waitUntil(
-    c.env.DB.prepare('UPDATE surveys SET visits = visits + 1 WHERE id = ?')
-      .bind(surveyId)
-      .run()
+    c.env.DB.prepare('UPDATE surveys SET visits = visits + 1 WHERE id = ?').bind(surveyId).run(),
   )
 
   const { results: questions } = await c.env.DB.prepare(
@@ -53,7 +52,10 @@ publicRouter.post('/responses/:surveyId', async (c) => {
 
   const responseId = crypto.randomUUID()
   const statements = [
-    c.env.DB.prepare('INSERT INTO responses (id, survey_id) VALUES (?, ?)').bind(responseId, surveyId)
+    c.env.DB.prepare('INSERT INTO responses (id, survey_id) VALUES (?, ?)').bind(
+      responseId,
+      surveyId,
+    ),
   ]
 
   // Insert all answers
@@ -61,15 +63,17 @@ publicRouter.post('/responses/:surveyId', async (c) => {
     for (const [questionId, value] of Object.entries(answers)) {
       statements.push(
         c.env.DB.prepare(
-          'INSERT INTO answers (id, response_id, question_id, value) VALUES (?, ?, ?, ?)'
-        ).bind(crypto.randomUUID(), responseId, questionId, String(value))
+          'INSERT INTO answers (id, response_id, question_id, value) VALUES (?, ?, ?, ?)',
+        ).bind(crypto.randomUUID(), responseId, questionId, String(value)),
       )
     }
   }
 
   // Update response count
   statements.push(
-    c.env.DB.prepare('UPDATE surveys SET responses_count = responses_count + 1 WHERE id = ?').bind(surveyId)
+    c.env.DB.prepare('UPDATE surveys SET responses_count = responses_count + 1 WHERE id = ?').bind(
+      surveyId,
+    ),
   )
 
   try {

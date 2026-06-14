@@ -204,37 +204,37 @@ body,
 
 /* Button outline override */
 .builder-theme .btn-outline {
-  border: 1px solid var(--border-strong) !important;
-  color: var(--text-primary) !important;
-  background: transparent !important;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  background: transparent;
 }
 
 .builder-theme .btn-outline:hover {
-  border-color: var(--text-primary) !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* Glow override */
 .builder-theme .shadow-brand-glow {
-  box-shadow: 0 0 24px rgba(227, 239, 38, 0.45) !important;
+  box-shadow: 0 0 24px rgba(227, 239, 38, 0.45);
 }
 
 /* Text selections */
 .builder-theme ::selection {
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
 }
 
 /* Active buttons on selection (tabs, scale selectors, toggles) */
 .builder-theme button.bg-brand {
-  background: linear-gradient(135deg, #E3EF26, #d6fb00) !important;
-  color: #06231D !important;
+  background: linear-gradient(135deg, #e3ef26, #d6fb00);
+  color: #06231d;
 }
 
 /* Custom AI Avatar background override */
 .builder-theme .bg-gradient-to-br.from-brand.to-brand-dark {
-  background: linear-gradient(135deg, #3f3f46, #18181b) !important;
-  color: var(--text-primary) !important;
+  background: linear-gradient(135deg, #3f3f46, #18181b);
+  color: var(--text-primary);
 }
 
 /* ==========================================
@@ -265,4 +265,3 @@ body,
   --text-secondary: #3f3f46;
   --text-muted: #71717a;
 }
-

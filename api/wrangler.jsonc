@@ -1,37 +1,35 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "sde-intern-task-api",
-	"main": "src/index.ts",
-	"compatibility_date": "2026-05-22",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"observability": {
-		"enabled": true
-	},
-	"workers_dev": true,
-	// Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "ai-form-builder-db",
-			"database_id": "f903dd77-3f6e-4ec4-af5f-008e971c96a2"
-		}
-	],
-	"kv_namespaces": [
-		{
-			"binding": "AUTH_KV",
-			"id": "6e1f8ef2da464377ac2adb78285481a3"
-		},
-		{
-			"binding": "ASSETS_KV",
-			"id": "60b3c72cd2db4558a3285026284a178a"
-		}
-	],
-	// "r2_buckets": [
-	// 	{
-	// 		"binding": "ASSETS",
-	// 		"bucket_name": "ai-form-builder-assets"
-	// 	}
-	// ]
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sde-intern-task-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "workers_dev": true,
+  // Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ai-form-builder-db",
+      "database_id": "f903dd77-3f6e-4ec4-af5f-008e971c96a2"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_KV",
+      "id": "6e1f8ef2da464377ac2adb78285481a3"
+    },
+    {
+      "binding": "ASSETS_KV",
+      "id": "60b3c72cd2db4558a3285026284a178a"
+    }
+  ]
+  // "r2_buckets": [
+  // 	{
+  // 		"binding": "ASSETS",
+  // 		"bucket_name": "ai-form-builder-assets"
+  // 	}
+  // ]
 }

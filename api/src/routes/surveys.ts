@@ -92,30 +92,26 @@ surveysRouter.put('/:id', async (c) => {
   }
 
   // Check if the survey already exists for this user
-  const existing = await c.env.DB.prepare(
-    'SELECT id FROM surveys WHERE id = ? AND user_id = ?'
-  )
+  const existing = await c.env.DB.prepare('SELECT id FROM surveys WHERE id = ? AND user_id = ?')
     .bind(surveyId, user.userId)
     .first()
 
   if (existing) {
     await c.env.DB.prepare(
-      'UPDATE surveys SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+      'UPDATE surveys SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
     )
       .bind(title, description || null, surveyId, user.userId)
       .run()
   } else {
     await c.env.DB.prepare(
-      'INSERT INTO surveys (id, user_id, title, description) VALUES (?, ?, ?, ?)'
+      'INSERT INTO surveys (id, user_id, title, description) VALUES (?, ?, ?, ?)',
     )
       .bind(surveyId, user.userId, title, description || null)
       .run()
   }
 
   // Replace all questions
-  const statements = [
-    c.env.DB.prepare('DELETE FROM questions WHERE survey_id = ?').bind(surveyId)
-  ]
+  const statements = [c.env.DB.prepare('DELETE FROM questions WHERE survey_id = ?').bind(surveyId)]
 
   if (Array.isArray(questions) && questions.length > 0) {
     questions.forEach((q: any, index: number) => {
@@ -161,7 +157,7 @@ surveysRouter.put('/:id/publish', async (c) => {
   const surveyId = c.req.param('id')
 
   const { success } = await c.env.DB.prepare(
-    'UPDATE surveys SET is_published = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+    'UPDATE surveys SET is_published = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
   )
     .bind(surveyId, user.userId)
     .run()
@@ -179,7 +175,7 @@ surveysRouter.put('/:id/unpublish', async (c) => {
   const surveyId = c.req.param('id')
 
   const { success } = await c.env.DB.prepare(
-    'UPDATE surveys SET is_published = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+    'UPDATE surveys SET is_published = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
   )
     .bind(surveyId, user.userId)
     .run()

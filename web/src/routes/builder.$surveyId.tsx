@@ -10,20 +10,24 @@ import {
   Eye,
   GripVertical,
   Loader2,
-  MessageSquare,
   MoreHorizontal,
   Plus,
+  Save,
   Send,
-  Share2,
   Sparkles,
   Trash2,
   Wand2,
   X,
-  Save,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { type Question, type QuestionType, type SurveyType, useSurveyStore, parseApiSurvey } from '@/lib/store'
-import { api, fetchWithAuth } from '@/lib/api-client'
+import { useEffect, useRef, useState } from 'react'
+import { api } from '@/lib/api-client'
+import {
+  parseApiSurvey,
+  type Question,
+  type QuestionType,
+  type SurveyType,
+  useSurveyStore,
+} from '@/lib/store'
 
 export const Route = createFileRoute('/builder/$surveyId')({
   head: () => ({ meta: [{ title: 'Editor — FormCraft' }] }),
@@ -139,7 +143,7 @@ function BuilderPage() {
       }
       setLoading(false)
     }
-  }, [surveyId, survey, addOrUpdateSurvey, navigate])
+  }, [surveyId, survey, addOrUpdateSurvey, navigate, showToast])
 
   if (loading) {
     return (
@@ -162,13 +166,13 @@ function BuilderPage() {
         style: survey.style,
         settings: survey.settings,
         layoutMode: survey.layoutMode,
-        surveyType: survey.surveyType
+        surveyType: survey.surveyType,
       })
-      
+
       await api.surveys.update(survey.id, {
         title: survey.title,
         description: configStr,
-        questions: survey.questions
+        questions: survey.questions,
       })
       savedSurveyRef.current = JSON.stringify(survey)
       showToast('Survey saved to dashboard')
@@ -192,13 +196,13 @@ function BuilderPage() {
       } else {
         await api.surveys.publish(survey.id)
       }
-      
+
       const newStatus = isPublished ? 'draft' : 'published'
       update(survey.id, { settings: { ...survey.settings, status: newStatus } })
-      
+
       const updatedSurvey = { ...survey, settings: { ...survey.settings, status: newStatus } }
       savedSurveyRef.current = JSON.stringify(updatedSurvey)
-      
+
       showToast(isPublished ? 'Survey unpublished' : 'Survey published')
     } catch (err) {
       console.error(err)
@@ -249,7 +253,11 @@ function BuilderPage() {
 
         {/* Survey Type Selector */}
         <div className="flex items-center gap-0.5 bg-surface-elevated rounded-lg p-0.5 border border-border-subtle">
-          {([{ v: 'form' as SurveyType, label: '📋 Form' }, { v: 'survey' as SurveyType, label: '📊 Survey' }, { v: 'quiz' as SurveyType, label: '🧠 Quiz' }]).map((t) => (
+          {[
+            { v: 'form' as SurveyType, label: '📋 Form' },
+            { v: 'survey' as SurveyType, label: '📊 Survey' },
+            { v: 'quiz' as SurveyType, label: '🧠 Quiz' },
+          ].map((t) => (
             <button
               key={t.v}
               onClick={() => !isPublished && update(survey.id, { surveyType: t.v })}
@@ -277,7 +285,7 @@ function BuilderPage() {
           >
             <BarChart3 className="w-3.5 h-3.5" /> Analytics
           </Link>
-          
+
           {isPublished && (
             <button
               onClick={handleShare}
@@ -332,13 +340,16 @@ function BuilderPage() {
         {isPublished && (
           <div className="absolute inset-0 z-40 bg-surface-base/40 backdrop-blur-[1px] flex items-start justify-center pt-8 pointer-events-auto">
             <div className="px-4 py-2 rounded-xl bg-surface-elevated border border-border-strong text-sm font-semibold shadow-2xl flex items-center gap-2">
-              <Check className="w-4 h-4 text-brand" /> Survey is published. Unpublish to continue editing.
+              <Check className="w-4 h-4 text-brand" /> Survey is published. Unpublish to continue
+              editing.
             </div>
           </div>
         )}
 
         {/* LEFT SIDEBAR */}
-        <aside className={`w-[280px] border-r border-border-subtle bg-surface-raised flex flex-col ${isPublished ? 'opacity-50 pointer-events-none' : ''}`}>
+        <aside
+          className={`w-[280px] border-r border-border-subtle bg-surface-raised flex flex-col ${isPublished ? 'opacity-50 pointer-events-none' : ''}`}
+        >
           {selected ? (
             <ConfigPanel surveyId={survey.id} qid={selected} onBack={() => setSelected(null)} />
           ) : (
@@ -372,10 +383,12 @@ function BuilderPage() {
         {/* CANVAS */}
         <main
           className={`flex-1 overflow-auto relative bg-cover bg-center ${isPublished ? 'pointer-events-none' : ''}`}
-          style={{ 
-            backgroundColor: survey.style.backgroundColor, 
-            backgroundImage: survey.style.backgroundImage ? `url(${survey.style.backgroundImage})` : 'none',
-            color: survey.style.textColor 
+          style={{
+            backgroundColor: survey.style.backgroundColor,
+            backgroundImage: survey.style.backgroundImage
+              ? `url(${survey.style.backgroundImage})`
+              : 'none',
+            color: survey.style.textColor,
           }}
         >
           <Canvas survey={survey} selected={selected} onSelect={setSelected} />
@@ -671,13 +684,13 @@ function ConfigPanel({
               ))}
             </div>
           </FieldLabel>
-        </>  
+        </>
       )}
 
       {survey.surveyType === 'quiz' && (
         <div className="pt-3 border-t border-border-subtle">
           <FieldLabel label="✅ Correct Answer (Quiz Mode)">
-            {(q.type === 'multiple-choice' || q.type === 'dropdown') ? (
+            {q.type === 'multiple-choice' || q.type === 'dropdown' ? (
               <select
                 value={q.correctAnswer ?? ''}
                 onChange={(e) => u({ correctAnswer: e.target.value })}
@@ -685,12 +698,16 @@ function ConfigPanel({
               >
                 <option value="">Select correct answer…</option>
                 {(q.options ?? []).map((opt, i) => (
-                  <option key={i} value={opt}>{opt}</option>
+                  <option key={i} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
             ) : q.type === 'checkboxes' ? (
               <div className="space-y-1">
-                <div className="text-[10px] text-text-muted mb-1">Select all correct options (comma-separated):</div>
+                <div className="text-[10px] text-text-muted mb-1">
+                  Select all correct options (comma-separated):
+                </div>
                 <input
                   value={q.correctAnswer ?? ''}
                   onChange={(e) => u({ correctAnswer: e.target.value })}
@@ -765,7 +782,7 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
       const res = await fetch('/api/ai/style', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt })
+        body: JSON.stringify({ prompt: aiPrompt }),
       })
       if (!res.ok) throw new Error('Failed to generate style')
       const stylePatch = await res.json()
@@ -797,7 +814,7 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
             <div key={p.name || p.preset} className="relative group">
               <button
                 onClick={() => setStyle(surveyId, p)}
-                className={`w-full rounded-lg border overflow-hidden text-left transition ${(survey.style.preset === p.name || survey.style.preset === p.preset) ? 'border-brand ring-1 ring-brand' : 'border-border-subtle hover:border-border-strong'}`}
+                className={`w-full rounded-lg border overflow-hidden text-left transition ${survey.style.preset === p.name || survey.style.preset === p.preset ? 'border-brand ring-1 ring-brand' : 'border-border-subtle hover:border-border-strong'}`}
               >
                 <div className="h-12 p-2" style={{ background: p.backgroundColor }}>
                   <div className="h-2 w-12 rounded" style={{ background: p.primaryColor }} />
@@ -872,7 +889,7 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
                   const { url } = await res.json()
                   setStyle(surveyId, { backgroundImage: url })
                   showToast('Image uploaded')
-                } catch (err) {
+                } catch (_err) {
                   showToast('Error uploading')
                 }
               }}
@@ -902,7 +919,17 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
             onChange={(e) => setStyle(surveyId, { fontFamily: e.target.value })}
             className="w-full px-3 py-2 rounded-lg bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
           >
-            {['Inter', 'Playfair', 'Space Grotesk', 'DM Sans', 'Sora', 'Roboto', 'Outfit', 'Merriweather', 'Lora'].map((f) => (
+            {[
+              'Inter',
+              'Playfair',
+              'Space Grotesk',
+              'DM Sans',
+              'Sora',
+              'Roboto',
+              'Outfit',
+              'Merriweather',
+              'Lora',
+            ].map((f) => (
               <option key={f}>{f}</option>
             ))}
           </select>
@@ -1064,7 +1091,7 @@ function Canvas({
   const [page, setPage] = useState(0)
   useEffect(() => {
     setPage(0)
-  }, [survey.id, survey.layoutMode])
+  }, [])
 
   const q = survey.questions
 
@@ -1244,7 +1271,7 @@ function renderInput(q: Question, style: any) {
         placeholder="Your answer..."
         type={q.type === 'number' ? 'number' : 'text'}
         className="w-full px-3 py-2.5 rounded-lg border-2 outline-none text-base placeholder:opacity-50"
-        style={{ ...inputBase, borderColor: style.primaryColor + '30' }}
+        style={{ ...inputBase, borderColor: `${style.primaryColor}30` }}
       />
     )
   if (q.type === 'long-text')
@@ -1254,7 +1281,7 @@ function renderInput(q: Question, style: any) {
         placeholder="Your answer..."
         rows={3}
         className="w-full px-3 py-2.5 rounded-lg border-2 outline-none text-base placeholder:opacity-50 resize-none"
-        style={{ ...inputBase, borderColor: style.primaryColor + '30' }}
+        style={{ ...inputBase, borderColor: `${style.primaryColor}30` }}
       />
     )
   if (q.type === 'multiple-choice' || q.type === 'checkboxes')
@@ -1264,7 +1291,7 @@ function renderInput(q: Question, style: any) {
           <div
             key={i}
             className="px-4 py-3 rounded-lg border-2 text-sm flex items-center gap-3"
-            style={{ borderColor: style.primaryColor + '30' }}
+            style={{ borderColor: `${style.primaryColor}30` }}
           >
             <span
               className={`w-4 h-4 ${q.type === 'checkboxes' ? 'rounded' : 'rounded-full'} border-2`}
@@ -1284,7 +1311,7 @@ function renderInput(q: Question, style: any) {
             <div
               key={i}
               className="w-10 h-10 rounded-lg border-2 grid place-items-center text-sm font-medium"
-              style={{ borderColor: style.primaryColor + '40' }}
+              style={{ borderColor: `${style.primaryColor}40` }}
             >
               {i + 1}
             </div>
@@ -1302,7 +1329,7 @@ function renderInput(q: Question, style: any) {
       <select
         disabled
         className="w-full px-3 py-2.5 rounded-lg border-2 outline-none text-base"
-        style={{ ...inputBase, borderColor: style.primaryColor + '30' }}
+        style={{ ...inputBase, borderColor: `${style.primaryColor}30` }}
       >
         {(q.options ?? []).map((o, i) => (
           <option key={i}>{o}</option>
@@ -1315,14 +1342,14 @@ function renderInput(q: Question, style: any) {
         disabled
         type="date"
         className="px-3 py-2.5 rounded-lg border-2 outline-none text-base"
-        style={{ ...inputBase, borderColor: style.primaryColor + '30' }}
+        style={{ ...inputBase, borderColor: `${style.primaryColor}30` }}
       />
     )
   if (q.type === 'image')
     return (
-      <div 
+      <div
         className="w-full px-3 py-6 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 opacity-60"
-        style={{ ...inputBase, borderColor: style.primaryColor + '50' }}
+        style={{ ...inputBase, borderColor: `${style.primaryColor}50` }}
       >
         <span className="text-2xl">🖼️</span>
         <span className="text-sm font-medium">Click to upload image</span>
@@ -1363,7 +1390,9 @@ const PRESET_PROMPTS = [
 function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void }) {
   const addQuestionsBulk = useSurveyStore((s) => s.addQuestionsBulk)
   const setStyle = useSurveyStore((s) => s.setStyle)
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; parsedAction?: any; imageUrl?: string }[]>([
+  const [messages, setMessages] = useState<
+    { role: 'user' | 'ai'; text: string; parsedAction?: any; imageUrl?: string }[]
+  >([
     {
       role: 'ai',
       text: "Hi! I'm your AI assistant. I can help you write questions, style your survey, or improve your wording. What can I help with?",
@@ -1377,60 +1406,77 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages, typing])
+  }, [])
 
   const send = async () => {
     if ((!input.trim() && !attachmentUrl) || typing) return
     const userMsg = input.trim()
     const currentAttachment = attachmentUrl
-    setMessages((m) => [...m, { role: 'user', text: userMsg, imageUrl: currentAttachment || undefined }])
+    setMessages((m) => [
+      ...m,
+      { role: 'user', text: userMsg, imageUrl: currentAttachment || undefined },
+    ])
     setInput('')
     setAttachmentUrl(null)
     if (inputRef.current) inputRef.current.style.height = 'auto'
     setTyping(true)
-    
+
     try {
       // Client-side interception: if user attached an image and wants it as background
       const bgKeywords = /background|bg|wallpaper|backdrop|behind/i
       if (currentAttachment && bgKeywords.test(userMsg)) {
         // Directly apply the image as the survey background — the AI can't return the URL
         setStyle(surveyId, { backgroundImage: currentAttachment })
-        setMessages((m) => [...m, { 
-          role: 'ai', 
-          text: "Done! I've set your uploaded image as the survey background. You can see it in the preview.", 
-          parsedAction: { action: 'set_background_image', payload: { backgroundImage: currentAttachment } }
-        }])
+        setMessages((m) => [
+          ...m,
+          {
+            role: 'ai',
+            text: "Done! I've set your uploaded image as the survey background. You can see it in the preview.",
+            parsedAction: {
+              action: 'set_background_image',
+              payload: { backgroundImage: currentAttachment },
+            },
+          },
+        ])
         return
       }
 
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           messages: [
-            { role: 'system', content: 'You are an expert survey builder AI. You must be decisive. When a user asks you to generate questions, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "Question text here?", "options": ["Option 1", "Option 2"]}]}. Do NOT ask for clarification before generating questions; make your best guess based on the topic. When a user asks for a visual style, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. If the user attaches an image and asks to use it as a background, respond with: "I\'ve set the image as the background." The backgroundImage will be handled automatically by the system. Do NOT output conversational filler if returning JSON.' },
-            ...messages.map(m => ({
+            {
+              role: 'system',
+              content:
+                'You are an expert survey builder AI. You must be decisive. When a user asks you to generate questions, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "Question text here?", "options": ["Option 1", "Option 2"]}]}. Do NOT ask for clarification before generating questions; make your best guess based on the topic. When a user asks for a visual style, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. If the user attaches an image and asks to use it as a background, respond with: "I\'ve set the image as the background." The backgroundImage will be handled automatically by the system. Do NOT output conversational filler if returning JSON.',
+            },
+            ...messages.map((m) => ({
               role: m.role === 'ai' ? 'assistant' : 'user',
-              content: m.imageUrl ? [
-                { type: 'text', text: m.text },
-                { type: 'image_url', image_url: { url: m.imageUrl } }
-              ] : m.text
+              content: m.imageUrl
+                ? [
+                    { type: 'text', text: m.text },
+                    { type: 'image_url', image_url: { url: m.imageUrl } },
+                  ]
+                : m.text,
             })),
             {
               role: 'user',
-              content: currentAttachment ? [
-                { type: 'text', text: userMsg || 'Analyze this image.' },
-                { type: 'image_url', image_url: { url: currentAttachment } }
-              ] : userMsg
-            }
+              content: currentAttachment
+                ? [
+                    { type: 'text', text: userMsg || 'Analyze this image.' },
+                    { type: 'image_url', image_url: { url: currentAttachment } },
+                  ]
+                : userMsg,
+            },
           ],
-          useVision: !!currentAttachment || messages.some(m => !!m.imageUrl)
-        })
+          useVision: !!currentAttachment || messages.some((m) => !!m.imageUrl),
+        }),
       })
       if (!res.ok) throw new Error('Failed')
       const data = await res.json()
       let replyText = data.choices?.[0]?.message?.content || 'Sorry, I encountered an error.'
-      
+
       let parsedAction = null
       const jsonRegex = /```json\s*([\s\S]*?)\s*```/g
       let match
@@ -1442,11 +1488,11 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
             replyText = replyText.replace(match[0], '').trim()
             break
           }
-        } catch (e) {}
+        } catch (_e) {}
       }
 
       setMessages((m) => [...m, { role: 'ai', text: replyText, parsedAction }])
-    } catch (e) {
+    } catch (_e) {
       setMessages((m) => [...m, { role: 'ai', text: 'Error connecting to AI.' }])
     } finally {
       setTyping(false)
@@ -1456,7 +1502,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value)
     e.target.style.height = 'auto'
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
   }
 
   return (
@@ -1514,17 +1560,25 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
               className={`max-w-[85%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-brand text-surface-base font-medium rounded-tr-sm' : 'bg-surface-elevated text-text-primary rounded-tl-sm'}`}
             >
               {m.imageUrl && (
-                <img src={m.imageUrl} alt="attachment" className="w-full max-h-32 object-cover rounded-lg mb-2 opacity-90" />
+                <img
+                  src={m.imageUrl}
+                  alt="attachment"
+                  className="w-full max-h-32 object-cover rounded-lg mb-2 opacity-90"
+                />
               )}
               {m.text}
               {m.parsedAction && m.parsedAction.action === 'add_questions' && (
                 <div className="mt-3 p-3 rounded-lg bg-surface-base border border-border-subtle">
                   <div className="text-xs font-bold mb-3 flex items-center gap-1.5 text-brand">
-                    <Sparkles className="w-3.5 h-3.5" /> Generated {m.parsedAction.payload.length} Questions
+                    <Sparkles className="w-3.5 h-3.5" /> Generated {m.parsedAction.payload.length}{' '}
+                    Questions
                   </div>
                   <div className="space-y-3 mb-3 max-h-60 overflow-y-auto pr-1">
                     {m.parsedAction.payload.map((q: any, idx: number) => (
-                      <div key={idx} className="bg-surface-elevated rounded border border-border-subtle p-2">
+                      <div
+                        key={idx}
+                        className="bg-surface-elevated rounded border border-border-subtle p-2"
+                      >
                         <div className="text-xs font-semibold text-text-primary mb-1">
                           {idx + 1}. {q.text}
                         </div>
@@ -1551,11 +1605,25 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
               )}
               {m.parsedAction && m.parsedAction.action === 'apply_style' && (
                 <div className="mt-2 p-2 rounded-lg bg-surface-base border border-border-subtle">
-                  <div className="text-xs font-semibold mb-2 text-text-secondary">Style Preview</div>
-                  <div className="h-16 rounded-md p-2 mb-2 flex flex-col gap-1 border border-border-subtle" style={{ background: m.parsedAction.payload.backgroundColor }}>
-                    <div className="h-2 w-12 rounded" style={{ background: m.parsedAction.payload.primaryColor }} />
-                    <div className="mt-1 h-2 w-20 rounded opacity-60" style={{ background: m.parsedAction.payload.textColor }} />
-                    <div className="mt-1 flex-1 rounded-sm opacity-50" style={{ background: m.parsedAction.payload.cardColor }} />
+                  <div className="text-xs font-semibold mb-2 text-text-secondary">
+                    Style Preview
+                  </div>
+                  <div
+                    className="h-16 rounded-md p-2 mb-2 flex flex-col gap-1 border border-border-subtle"
+                    style={{ background: m.parsedAction.payload.backgroundColor }}
+                  >
+                    <div
+                      className="h-2 w-12 rounded"
+                      style={{ background: m.parsedAction.payload.primaryColor }}
+                    />
+                    <div
+                      className="mt-1 h-2 w-20 rounded opacity-60"
+                      style={{ background: m.parsedAction.payload.textColor }}
+                    />
+                    <div
+                      className="mt-1 flex-1 rounded-sm opacity-50"
+                      style={{ background: m.parsedAction.payload.cardColor }}
+                    />
                   </div>
                   <button
                     onClick={() => setStyle(surveyId, m.parsedAction.payload)}
@@ -1570,10 +1638,10 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
                   <div className="text-xs font-semibold mb-2 text-text-secondary flex items-center gap-1.5">
                     <Check className="w-3.5 h-3.5 text-brand" /> Background Applied
                   </div>
-                  <img 
-                    src={m.parsedAction.payload.backgroundImage} 
-                    alt="Background" 
-                    className="w-full h-20 object-cover rounded-md border border-border-subtle" 
+                  <img
+                    src={m.parsedAction.payload.backgroundImage}
+                    alt="Background"
+                    className="w-full h-20 object-cover rounded-md border border-border-subtle"
                   />
                 </div>
               )}
@@ -1597,8 +1665,15 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
       <div className="p-3 border-t border-border-subtle">
         {attachmentUrl && (
           <div className="relative inline-block mb-2">
-            <img src={attachmentUrl} alt="preview" className="h-16 w-16 object-cover rounded-lg border border-border-subtle" />
-            <button onClick={() => setAttachmentUrl(null)} className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-surface-raised border border-border-subtle text-text-secondary rounded-full flex items-center justify-center text-[10px] hover:text-danger hover:border-danger">
+            <img
+              src={attachmentUrl}
+              alt="preview"
+              className="h-16 w-16 object-cover rounded-lg border border-border-subtle"
+            />
+            <button
+              onClick={() => setAttachmentUrl(null)}
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-surface-raised border border-border-subtle text-text-secondary rounded-full flex items-center justify-center text-[10px] hover:text-danger hover:border-danger"
+            >
               ✕
             </button>
           </div>
@@ -1606,10 +1681,10 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
         <div className="flex gap-2 items-end">
           <label className="p-2.5 rounded-xl bg-surface-elevated hover:bg-surface-raised border border-border-subtle text-text-secondary cursor-pointer transition">
             <Plus className="w-4 h-4" />
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
@@ -1677,5 +1752,3 @@ function Dot({ delay }: { delay: number }) {
     />
   )
 }
-
-

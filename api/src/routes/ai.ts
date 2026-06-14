@@ -54,7 +54,7 @@ aiRouter.post('/style', async (c) => {
 
   // Use the code model for generating precise JSON configurations
   const model = 'meta/codellama-70b'
-  
+
   const systemPrompt = `You are an expert UX/UI designer and JSON generator. 
 Generate a JSON object for a survey styling configuration based on the user's prompt. 
 The JSON must strictly match this TypeScript interface:
@@ -79,7 +79,7 @@ Return ONLY valid JSON, without any markdown formatting or surrounding text.`
         model,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
+          { role: 'user', content: prompt },
         ],
         temperature: 0.5,
         max_tokens: 500,
@@ -95,18 +95,18 @@ Return ONLY valid JSON, without any markdown formatting or surrounding text.`
     const data = await response.json()
     // The response content should be the raw JSON text.
     let jsonContent = data.choices[0].message.content.trim()
-    
+
     // In case it comes with markdown code blocks:
-    if (jsonContent.startsWith('\`\`\`json')) {
-      jsonContent = jsonContent.replace(/^\`\`\`json\n/, '').replace(/\n\`\`\`$/, '')
-    } else if (jsonContent.startsWith('\`\`\`')) {
-      jsonContent = jsonContent.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '')
+    if (jsonContent.startsWith('```json')) {
+      jsonContent = jsonContent.replace(/^```json\n/, '').replace(/\n```$/, '')
+    } else if (jsonContent.startsWith('```')) {
+      jsonContent = jsonContent.replace(/^```\n/, '').replace(/\n```$/, '')
     }
-    
+
     try {
       const parsed = JSON.parse(jsonContent)
       return c.json(parsed)
-    } catch (parseError) {
+    } catch (_parseError) {
       console.error('Failed to parse AI JSON response:', jsonContent)
       return c.json({ error: 'AI returned invalid JSON configuration' }, 500)
     }

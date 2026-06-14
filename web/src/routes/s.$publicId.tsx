@@ -1,9 +1,9 @@
 import { createFileRoute, useParams } from '@tanstack/react-router'
 import { ArrowRight, Check, Loader2 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Logo } from '@/components/Logo'
-import { type Question, useSurveyStore, parseApiSurvey } from '@/lib/store'
 import { api } from '@/lib/api-client'
+import { parseApiSurvey, type Question } from '@/lib/store'
 
 export const Route = createFileRoute('/s/$publicId')({
   head: () => ({ meta: [{ title: 'Survey — FormCraft' }] }),
@@ -79,7 +79,7 @@ function PublicSurveyPage() {
         <div className="text-center max-w-md">
           <div
             className="w-16 h-16 rounded-full grid place-items-center mx-auto"
-            style={{ background: style.primaryColor + '20' }}
+            style={{ background: `${style.primaryColor}20` }}
           >
             <Check className="w-8 h-8" style={{ color: style.primaryColor }} />
           </div>
@@ -250,7 +250,7 @@ function PublicQuestion({
             onChange={(e) => onChange(e.target.value)}
             placeholder="Your answer..."
             className="w-full px-3 py-2.5 rounded-lg bg-transparent border-2 outline-none focus:border-current text-base"
-            style={{ borderColor: style.primaryColor + '40', color: style.textColor }}
+            style={{ borderColor: `${style.primaryColor}40`, color: style.textColor }}
           />
         )}
         {q.type === 'number' && (
@@ -260,7 +260,7 @@ function PublicQuestion({
             onChange={(e) => onChange(e.target.value)}
             placeholder="0"
             className="w-full px-3 py-2.5 rounded-lg bg-transparent border-2 outline-none text-base"
-            style={{ borderColor: style.primaryColor + '40', color: style.textColor }}
+            style={{ borderColor: `${style.primaryColor}40`, color: style.textColor }}
           />
         )}
         {q.type === 'long-text' && (
@@ -270,7 +270,7 @@ function PublicQuestion({
             rows={4}
             placeholder="Your answer..."
             className="w-full px-3 py-2.5 rounded-lg bg-transparent border-2 outline-none text-base resize-none"
-            style={{ borderColor: style.primaryColor + '40', color: style.textColor }}
+            style={{ borderColor: `${style.primaryColor}40`, color: style.textColor }}
           />
         )}
         {q.type === 'date' && (
@@ -279,7 +279,7 @@ function PublicQuestion({
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}
             className="px-3 py-2.5 rounded-lg bg-transparent border-2 outline-none text-base"
-            style={{ borderColor: style.primaryColor + '40', color: style.textColor }}
+            style={{ borderColor: `${style.primaryColor}40`, color: style.textColor }}
           />
         )}
         {q.type === 'dropdown' && (
@@ -288,7 +288,7 @@ function PublicQuestion({
             onChange={(e) => onChange(e.target.value)}
             className="w-full px-3 py-2.5 rounded-lg bg-transparent border-2 outline-none text-base"
             style={{
-              borderColor: style.primaryColor + '40',
+              borderColor: `${style.primaryColor}40`,
               color: style.textColor,
               background: style.cardColor,
             }}
@@ -309,8 +309,8 @@ function PublicQuestion({
                   onClick={() => onChange(o)}
                   className="w-full px-4 py-3 rounded-lg border-2 text-sm flex items-center gap-3 text-left transition"
                   style={{
-                    borderColor: sel ? style.primaryColor : style.primaryColor + '30',
-                    background: sel ? style.primaryColor + '15' : 'transparent',
+                    borderColor: sel ? style.primaryColor : `${style.primaryColor}30`,
+                    background: sel ? `${style.primaryColor}15` : 'transparent',
                   }}
                 >
                   <span
@@ -341,8 +341,8 @@ function PublicQuestion({
                   onClick={() => onChange(sel ? arr.filter((x) => x !== o) : [...arr, o])}
                   className="w-full px-4 py-3 rounded-lg border-2 text-sm flex items-center gap-3 text-left"
                   style={{
-                    borderColor: sel ? style.primaryColor : style.primaryColor + '30',
-                    background: sel ? style.primaryColor + '15' : 'transparent',
+                    borderColor: sel ? style.primaryColor : `${style.primaryColor}30`,
+                    background: sel ? `${style.primaryColor}15` : 'transparent',
                   }}
                 >
                   <span

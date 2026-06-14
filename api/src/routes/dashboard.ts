@@ -26,6 +26,6 @@ dashboardRouter.get('/', async (c) => {
       surveys: metrics.total_surveys || 0,
       visits: metrics.total_visits || 0,
       responses: metrics.total_responses || 0,
-    }
+    },
   })
 })

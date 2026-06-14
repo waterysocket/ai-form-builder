@@ -1,14 +1,15 @@
 import { Hono } from 'hono'
 import { type AuthVariables, authMiddleware } from './middleware/auth'
-import { authRouter, authRouterWithMe } from './routes/auth'
+import { authRouterWithMe } from './routes/auth'
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>()
 
 app.get('/api/health', (c) => c.json({ status: 'ok' }))
 
-import { surveysRouter } from './routes/surveys'
-import { publicRouter } from './routes/public'
 import { dashboardRouter } from './routes/dashboard'
+import { publicRouter } from './routes/public'
+import { surveysRouter } from './routes/surveys'
+
 // Mount the authentication router
 app.route('/api/auth', authRouterWithMe)
 
@@ -16,6 +17,7 @@ app.route('/api/auth', authRouterWithMe)
 app.route('/api/surveys', surveysRouter)
 
 import { responsesRouter } from './routes/responses'
+
 // Mount the responses router
 app.route('/api/responses', responsesRouter)
 
@@ -26,7 +28,7 @@ app.route('/api/dashboard', dashboardRouter)
 app.route('/api/public', publicRouter)
 
 import { aiRouter } from './routes/ai'
-import { uploadRouter, assetsRouter } from './routes/upload'
+import { assetsRouter, uploadRouter } from './routes/upload'
 
 // Mount the AI router
 app.route('/api/ai', aiRouter)

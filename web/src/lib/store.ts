@@ -191,11 +191,11 @@ export function parseApiSurvey(apiSurvey: any, apiQuestions: any[]): Survey {
   }
 
   const questions = (apiQuestions || []).map((q: any) => {
-    let options: string[] | undefined = undefined
+    let options: string[] | undefined
     let required = false
-    let scale: 5 | 10 | undefined = undefined
-    let minLabel: string | undefined = undefined
-    let maxLabel: string | undefined = undefined
+    let scale: 5 | 10 | undefined
+    let minLabel: string | undefined
+    let maxLabel: string | undefined
 
     if (q.options) {
       try {
@@ -284,11 +284,11 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
               ...x,
               questions: [
                 ...x.questions,
-                ...qs.map((q, i) => ({
+                ...(qs.map((q, i) => ({
                   id: `q-${Date.now()}-${i}`,
                   ...defaultQuestion(q.type || 'short-text'),
                   ...q,
-                })) as Question[],
+                })) as Question[]),
               ],
             }
           : x,
@@ -386,10 +386,11 @@ export const useAuth = create<AuthState>((set) => ({
     if (typeof window !== 'undefined') localStorage.removeItem('fc-user')
     set({ user: null })
   },
-  updateUser: (name) => set((state) => {
-    if (!state.user) return state;
-    const user = { ...state.user, name };
-    if (typeof window !== 'undefined') localStorage.setItem('fc-user', JSON.stringify(user))
-    return { user };
-  }),
+  updateUser: (name) =>
+    set((state) => {
+      if (!state.user) return state
+      const user = { ...state.user, name }
+      if (typeof window !== 'undefined') localStorage.setItem('fc-user', JSON.stringify(user))
+      return { user }
+    }),
 }))

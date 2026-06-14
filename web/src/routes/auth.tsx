@@ -49,7 +49,7 @@ function AuthPage() {
       // Simulate clicking the magic link
       const verifyRes = await fetch(`/api/auth/verify?token=${data.token}`)
       if (!verifyRes.ok) throw new Error('Verification failed')
-      const verifyData = await verifyRes.json()
+      const _verifyData = await verifyRes.json()
 
       setSuccess(true)
       signIn(email, name || undefined) // still update local state for UI

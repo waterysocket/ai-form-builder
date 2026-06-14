@@ -41,12 +41,15 @@ export const assetsRouter = new Hono<{ Bindings: Env }>()
 
 assetsRouter.get('/*', async (c) => {
   const key = c.req.path.replace('/api/assets/', '')
-  
+
   if (!c.env.ASSETS_KV) {
     return c.text('KV bucket not configured', 500)
   }
 
-  const { value, metadata } = await c.env.ASSETS_KV.getWithMetadata<{ contentType: string }>(key, 'arrayBuffer')
+  const { value, metadata } = await c.env.ASSETS_KV.getWithMetadata<{ contentType: string }>(
+    key,
+    'arrayBuffer',
+  )
 
   if (!value) {
     return c.text('Not found', 404)
