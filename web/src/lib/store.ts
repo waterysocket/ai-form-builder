@@ -136,6 +136,7 @@ interface SurveyStoreState {
   createSurvey: () => Survey
   updateSurvey: (id: string, patch: Partial<Survey>) => void
   addQuestion: (id: string, type: QuestionType) => void
+  addQuestionsBulk: (id: string, questions: Partial<Question>[]) => void
   updateQuestion: (id: string, qid: string, patch: Partial<Question>) => void
   removeQuestion: (id: string, qid: string) => void
   duplicateQuestion: (id: string, qid: string) => void
@@ -187,6 +188,24 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
           ? {
               ...x,
               questions: [...x.questions, { id: `q-${Date.now()}`, ...defaultQuestion(type) }],
+            }
+          : x,
+      ),
+    })),
+  addQuestionsBulk: (id, qs) =>
+    set((s) => ({
+      surveys: s.surveys.map((x) =>
+        x.id === id
+          ? {
+              ...x,
+              questions: [
+                ...x.questions,
+                ...qs.map((q, i) => ({
+                  id: `q-${Date.now()}-${i}`,
+                  ...defaultQuestion(q.type || 'short-text'),
+                  ...q,
+                })) as Question[],
+              ],
             }
           : x,
       ),

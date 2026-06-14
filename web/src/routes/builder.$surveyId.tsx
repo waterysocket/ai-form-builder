@@ -128,7 +128,7 @@ function BuilderPage() {
   }
 
   return (
-    <div className="builder-theme min-h-screen flex flex-col bg-surface-base text-text-primary">
+    <div className="builder-theme h-screen overflow-hidden flex flex-col bg-surface-base text-text-primary">
       {/* TOP NAV */}
       <header className="h-14 border-b border-border-subtle flex items-center px-4 gap-3 glass z-30">
         <Link
@@ -1164,7 +1164,8 @@ const PRESET_PROMPTS = [
 ]
 
 function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void }) {
-  const addQuestion = useSurveyStore((s) => s.addQuestion)
+  const addQuestionsBulk = useSurveyStore((s) => s.addQuestionsBulk)
+  const setStyle = useSurveyStore((s) => s.setStyle)
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; parsedAction?: any; imageUrl?: string }[]>([
     {
       role: 'ai',
@@ -1197,7 +1198,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: [
-            { role: 'system', content: 'You are an AI assistant helping a user build a survey. You can chat normally. If the user wants to add questions, return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "...", "options": []}]}. Otherwise, just reply in text.' },
+            { role: 'system', content: 'You are an AI assistant helping a user build a survey. You can chat normally. If the user wants to add questions, return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "...", "options": []}]}. If the user wants to generate a visual style, return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. NEVER include raw JSON or code blocks outside of this structure. Otherwise, just reply in text.' },
             ...messages.map(m => ({
               role: m.role === 'ai' ? 'assistant' : 'user',
               content: m.imageUrl ? [
@@ -1221,11 +1222,16 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
       let replyText = data.choices?.[0]?.message?.content || 'Sorry, I encountered an error.'
       
       let parsedAction = null
-      const jsonMatch = replyText.match(/```json\n([\s\S]*?)\n```/)
-      if (jsonMatch) {
+      const jsonRegex = /```json\s*([\s\S]*?)\s*```/g
+      let match
+      while ((match = jsonRegex.exec(replyText)) !== null) {
         try {
-          parsedAction = JSON.parse(jsonMatch[1])
-          replyText = replyText.replace(jsonMatch[0], '').trim()
+          const parsed = JSON.parse(match[1])
+          if (parsed.action) {
+            parsedAction = parsed
+            replyText = replyText.replace(match[0], '').trim()
+            break
+          }
         } catch (e) {}
       }
 
@@ -1302,16 +1308,31 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
               )}
               {m.text}
               {m.parsedAction && m.parsedAction.action === 'add_questions' && (
-                <button
-                  onClick={() => {
-                    m.parsedAction.payload.forEach((q: any) => {
-                      addQuestion(surveyId, q.type || 'short-text')
-                    })
-                  }}
-                  className="mt-2 w-full py-1.5 rounded bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition"
-                >
-                  Execute: Add Questions
-                </button>
+                <div className="mt-2 p-2 rounded-lg bg-surface-base border border-border-subtle">
+                  <div className="text-xs font-semibold mb-2 text-text-secondary">Ready to add {m.parsedAction.payload.length} questions</div>
+                  <button
+                    onClick={() => addQuestionsBulk(surveyId, m.parsedAction.payload)}
+                    className="w-full py-1.5 rounded bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition"
+                  >
+                    Execute: Add Questions
+                  </button>
+                </div>
+              )}
+              {m.parsedAction && m.parsedAction.action === 'apply_style' && (
+                <div className="mt-2 p-2 rounded-lg bg-surface-base border border-border-subtle">
+                  <div className="text-xs font-semibold mb-2 text-text-secondary">Style Preview</div>
+                  <div className="h-16 rounded-md p-2 mb-2 flex flex-col gap-1 border border-border-subtle" style={{ background: m.parsedAction.payload.backgroundColor }}>
+                    <div className="h-2 w-12 rounded" style={{ background: m.parsedAction.payload.primaryColor }} />
+                    <div className="mt-1 h-2 w-20 rounded opacity-60" style={{ background: m.parsedAction.payload.textColor }} />
+                    <div className="mt-1 flex-1 rounded-sm opacity-50" style={{ background: m.parsedAction.payload.cardColor }} />
+                  </div>
+                  <button
+                    onClick={() => setStyle(surveyId, m.parsedAction.payload)}
+                    className="w-full py-1.5 rounded bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition"
+                  >
+                    Apply Style
+                  </button>
+                </div>
               )}
             </div>
           </div>
