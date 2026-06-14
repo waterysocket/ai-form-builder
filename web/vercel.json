@@ -1,4 +1,5 @@
 {
+  "installCommand": "pnpm install --filter sde-intern-task-web...",
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "framework": "vite",
@@ -6,6 +7,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://sde-intern-task-api.pariisharma30.workers.dev/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
