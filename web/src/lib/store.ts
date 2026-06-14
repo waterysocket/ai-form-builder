@@ -239,6 +239,7 @@ interface AuthState {
   user: { name: string; email: string } | null
   signIn: (email: string, name?: string) => void
   signOut: () => void
+  updateUser: (name: string) => void
 }
 
 export const useAuth = create<AuthState>((set) => ({
@@ -255,4 +256,10 @@ export const useAuth = create<AuthState>((set) => ({
     if (typeof window !== 'undefined') localStorage.removeItem('fc-user')
     set({ user: null })
   },
+  updateUser: (name) => set((state) => {
+    if (!state.user) return state;
+    const user = { ...state.user, name };
+    if (typeof window !== 'undefined') localStorage.setItem('fc-user', JSON.stringify(user))
+    return { user };
+  }),
 }))

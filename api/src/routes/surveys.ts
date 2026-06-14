@@ -119,3 +119,39 @@ surveysRouter.delete('/:id', async (c) => {
 
   return c.json({ message: 'Survey deleted' })
 })
+
+// Publish a survey
+surveysRouter.put('/:id/publish', async (c) => {
+  const user = c.get('user')
+  const surveyId = c.req.param('id')
+
+  const { success } = await c.env.DB.prepare(
+    'UPDATE surveys SET is_published = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+  )
+    .bind(surveyId, user.userId)
+    .run()
+
+  if (!success) {
+    return c.json({ error: 'Survey not found or could not be published' }, 404)
+  }
+
+  return c.json({ message: 'Survey published' })
+})
+
+// Unpublish a survey
+surveysRouter.put('/:id/unpublish', async (c) => {
+  const user = c.get('user')
+  const surveyId = c.req.param('id')
+
+  const { success } = await c.env.DB.prepare(
+    'UPDATE surveys SET is_published = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+  )
+    .bind(surveyId, user.userId)
+    .run()
+
+  if (!success) {
+    return c.json({ error: 'Survey not found or could not be unpublished' }, 404)
+  }
+
+  return c.json({ message: 'Survey unpublished' })
+})

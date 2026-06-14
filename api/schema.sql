@@ -15,6 +15,9 @@ CREATE TABLE surveys (
     user_id TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
+    is_published INTEGER DEFAULT 0,
+    visits INTEGER DEFAULT 0,
+    responses_count INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
