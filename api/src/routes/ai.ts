@@ -13,7 +13,7 @@ aiRouter.post('/chat', async (c) => {
     return c.json({ error: 'NVIDIA_NIM_KEY is not configured' }, 500)
   }
 
-  const model = useVision ? 'meta/llama-3.2-90b-vision-instruct' : 'meta/llama-3.1-70b-instruct'
+  const model = useVision ? 'meta/llama-3.2-11b-vision-instruct' : 'meta/llama-3.1-70b-instruct'
 
   try {
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {

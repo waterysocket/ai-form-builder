@@ -3,6 +3,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  BarChart3,
   Check,
   ChevronLeft,
   Copy,
@@ -18,9 +19,11 @@ import {
   Trash2,
   Wand2,
   X,
+  Save,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { type Question, type QuestionType, useSurveyStore } from '@/lib/store'
+import { type Question, type QuestionType, type SurveyType, useSurveyStore, parseApiSurvey } from '@/lib/store'
+import { api, fetchWithAuth } from '@/lib/api-client'
 
 export const Route = createFileRoute('/builder/$surveyId')({
   head: () => ({ meta: [{ title: 'Editor — FormCraft' }] }),
@@ -89,6 +92,7 @@ function BuilderPage() {
   const navigate = useNavigate()
   const survey = useSurveyStore((s) => s.surveys.find((x) => x.id === surveyId))
   const update = useSurveyStore((s) => s.updateSurvey)
+  const addOrUpdateSurvey = useSurveyStore((s) => s.addOrUpdateSurvey)
 
   const [tab, setTab] = useState<'questions' | 'style' | 'settings'>('questions')
   const [selected, setSelected] = useState<string | null>(null)
@@ -96,29 +100,112 @@ function BuilderPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(!survey)
+  const [publishing, setPublishing] = useState(false)
   const titleRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (editingTitle) titleRef.current?.focus()
-  }, [editingTitle])
-
-  useEffect(() => {
-    if (!survey) navigate({ to: '/builder/dashboard' })
-  }, [survey, navigate])
+  const savedSurveyRef = useRef<string | null>(null)
 
   const showToast = (m: string) => {
     setToast(m)
     setTimeout(() => setToast(null), 2500)
   }
 
+  useEffect(() => {
+    if (editingTitle) titleRef.current?.focus()
+  }, [editingTitle])
+
+  useEffect(() => {
+    const fetchSurvey = async () => {
+      try {
+        const data = await api.surveys.get(surveyId!)
+        if (data.error) throw new Error(data.error)
+        const parsed = parseApiSurvey(data.survey, data.questions)
+        addOrUpdateSurvey(parsed)
+        savedSurveyRef.current = JSON.stringify(parsed)
+      } catch (err) {
+        console.error('Failed to load survey', err)
+        showToast('Error loading survey')
+        navigate({ to: '/builder/dashboard' })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!survey) {
+      fetchSurvey()
+    } else {
+      if (savedSurveyRef.current === null) {
+        savedSurveyRef.current = JSON.stringify(survey)
+      }
+      setLoading(false)
+    }
+  }, [surveyId, survey, addOrUpdateSurvey, navigate])
+
+  if (loading) {
+    return (
+      <div className="h-screen grid place-items-center text-text-secondary bg-[#06231D] p-6">
+        <div className="text-center space-y-2">
+          <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto" />
+          <p className="text-sm">Loading editor...</p>
+        </div>
+      </div>
+    )
+  }
+
   if (!survey) return null
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true)
-    setTimeout(() => {
+    try {
+      // Stringify style and settings into description to preserve them in the simple schema
+      const configStr = JSON.stringify({
+        style: survey.style,
+        settings: survey.settings,
+        layoutMode: survey.layoutMode,
+        surveyType: survey.surveyType
+      })
+      
+      await api.surveys.update(survey.id, {
+        title: survey.title,
+        description: configStr,
+        questions: survey.questions
+      })
+      savedSurveyRef.current = JSON.stringify(survey)
+      showToast('Survey saved to dashboard')
+    } catch (err) {
+      console.error(err)
+      showToast('Error saving survey')
+    } finally {
       setSaving(false)
-      showToast('Survey saved')
-    }, 600)
+    }
+  }
+
+  const handlePublishToggle = async () => {
+    const isPublished = survey.settings.status === 'published'
+    setPublishing(true)
+    try {
+      if (!isPublished) {
+        await handleSave() // auto-save before publishing
+      }
+      if (isPublished) {
+        await api.surveys.unpublish(survey.id)
+      } else {
+        await api.surveys.publish(survey.id)
+      }
+      
+      const newStatus = isPublished ? 'draft' : 'published'
+      update(survey.id, { settings: { ...survey.settings, status: newStatus } })
+      
+      const updatedSurvey = { ...survey, settings: { ...survey.settings, status: newStatus } }
+      savedSurveyRef.current = JSON.stringify(updatedSurvey)
+      
+      showToast(isPublished ? 'Survey unpublished' : 'Survey published')
+    } catch (err) {
+      console.error(err)
+      showToast('Error updating publish status')
+    } finally {
+      setPublishing(false)
+    }
   }
 
   const handleShare = () => {
@@ -126,6 +213,9 @@ function BuilderPage() {
     navigator.clipboard?.writeText(url)
     showToast('Link copied!')
   }
+
+  const isPublished = survey.settings.status === 'published'
+  const hasChanges = savedSurveyRef.current !== JSON.stringify(survey)
 
   return (
     <div className="builder-theme h-screen overflow-hidden flex flex-col bg-surface-base text-text-primary">
@@ -138,7 +228,7 @@ function BuilderPage() {
           <ArrowLeft className="w-4 h-4" /> Dashboard
         </Link>
         <div className="h-5 w-px bg-border-subtle" />
-        {editingTitle ? (
+        {editingTitle && !isPublished ? (
           <input
             ref={titleRef}
             value={survey.title}
@@ -149,12 +239,28 @@ function BuilderPage() {
           />
         ) : (
           <button
-            onClick={() => setEditingTitle(true)}
-            className="text-sm font-semibold px-2 py-1 rounded-lg hover:bg-surface-elevated transition"
+            onClick={() => !isPublished && setEditingTitle(true)}
+            disabled={isPublished}
+            className="text-sm font-semibold px-2 py-1 rounded-lg hover:bg-surface-elevated transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {survey.title}
           </button>
         )}
+
+        {/* Survey Type Selector */}
+        <div className="flex items-center gap-0.5 bg-surface-elevated rounded-lg p-0.5 border border-border-subtle">
+          {([{ v: 'form' as SurveyType, label: '📋 Form' }, { v: 'survey' as SurveyType, label: '📊 Survey' }, { v: 'quiz' as SurveyType, label: '🧠 Quiz' }]).map((t) => (
+            <button
+              key={t.v}
+              onClick={() => !isPublished && update(survey.id, { surveyType: t.v })}
+              disabled={isPublished}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${survey.surveyType === t.v ? 'bg-brand text-surface-base shadow-sm' : 'text-text-secondary hover:text-text-primary'} disabled:cursor-not-allowed`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <a
             href={`/s/${survey.publicId}`}
@@ -164,22 +270,54 @@ function BuilderPage() {
           >
             <Eye className="w-3.5 h-3.5" /> Preview
           </a>
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm btn-brand"
+          <Link
+            to="/analytics/$surveyId"
+            params={{ surveyId: survey.id }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm btn-outline"
           >
-            <Share2 className="w-3.5 h-3.5" /> Share
-          </button>
+            <BarChart3 className="w-3.5 h-3.5" /> Analytics
+          </Link>
+          
+          {isPublished && (
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm btn-brand shadow-brand-glow"
+            >
+              <Copy className="w-3.5 h-3.5" /> Copy Link
+            </button>
+          )}
+
           <button
-            onClick={handleSave}
-            className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition"
+            onClick={handlePublishToggle}
+            disabled={publishing || saving}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm transition ${isPublished ? 'btn-outline border-danger text-danger hover:bg-danger/10' : 'btn-brand'}`}
           >
-            <MoreHorizontal className="w-4 h-4" />
+            {publishing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isPublished ? (
+              <X className="w-3.5 h-3.5" />
+            ) : null}
+            {isPublished ? 'Unpublish' : 'Publish'}
           </button>
+
+          {!isPublished && (
+            <button
+              onClick={handleSave}
+              disabled={saving || !hasChanges}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm btn-outline transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-3.5 h-3.5" /> Save
+            </button>
+          )}
+
           <div className="ml-2 text-xs text-text-muted flex items-center gap-1.5 min-w-[68px]">
-            {saving ? (
+            {saving || publishing ? (
               <>
-                <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+                <Loader2 className="w-3 h-3 animate-spin" /> {saving ? 'Saving...' : 'Working...'}
+              </>
+            ) : hasChanges ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-brand animate-pulse" /> Unsaved
               </>
             ) : (
               <>
@@ -190,9 +328,17 @@ function BuilderPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
+        {isPublished && (
+          <div className="absolute inset-0 z-40 bg-surface-base/40 backdrop-blur-[1px] flex items-start justify-center pt-8 pointer-events-auto">
+            <div className="px-4 py-2 rounded-xl bg-surface-elevated border border-border-strong text-sm font-semibold shadow-2xl flex items-center gap-2">
+              <Check className="w-4 h-4 text-brand" /> Survey is published. Unpublish to continue editing.
+            </div>
+          </div>
+        )}
+
         {/* LEFT SIDEBAR */}
-        <aside className="w-[280px] border-r border-border-subtle bg-surface-raised flex flex-col">
+        <aside className={`w-[280px] border-r border-border-subtle bg-surface-raised flex flex-col ${isPublished ? 'opacity-50 pointer-events-none' : ''}`}>
           {selected ? (
             <ConfigPanel surveyId={survey.id} qid={selected} onBack={() => setSelected(null)} />
           ) : (
@@ -225,7 +371,7 @@ function BuilderPage() {
 
         {/* CANVAS */}
         <main
-          className="flex-1 overflow-auto relative bg-cover bg-center"
+          className={`flex-1 overflow-auto relative bg-cover bg-center ${isPublished ? 'pointer-events-none' : ''}`}
           style={{ 
             backgroundColor: survey.style.backgroundColor, 
             backgroundImage: survey.style.backgroundImage ? `url(${survey.style.backgroundImage})` : 'none',
@@ -525,7 +671,53 @@ function ConfigPanel({
               ))}
             </div>
           </FieldLabel>
-        </>
+        </>  
+      )}
+
+      {survey.surveyType === 'quiz' && (
+        <div className="pt-3 border-t border-border-subtle">
+          <FieldLabel label="✅ Correct Answer (Quiz Mode)">
+            {(q.type === 'multiple-choice' || q.type === 'dropdown') ? (
+              <select
+                value={q.correctAnswer ?? ''}
+                onChange={(e) => u({ correctAnswer: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
+              >
+                <option value="">Select correct answer…</option>
+                {(q.options ?? []).map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+              </select>
+            ) : q.type === 'checkboxes' ? (
+              <div className="space-y-1">
+                <div className="text-[10px] text-text-muted mb-1">Select all correct options (comma-separated):</div>
+                <input
+                  value={q.correctAnswer ?? ''}
+                  onChange={(e) => u({ correctAnswer: e.target.value })}
+                  placeholder="Option 1, Option 3"
+                  className="w-full px-2.5 py-1.5 rounded-md bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
+                />
+              </div>
+            ) : q.type === 'rating' ? (
+              <input
+                type="number"
+                min={1}
+                max={q.scale ?? 5}
+                value={q.correctAnswer ?? ''}
+                onChange={(e) => u({ correctAnswer: e.target.value })}
+                placeholder={`1–${q.scale ?? 5}`}
+                className="w-full px-2.5 py-1.5 rounded-md bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
+              />
+            ) : (
+              <input
+                value={q.correctAnswer ?? ''}
+                onChange={(e) => u({ correctAnswer: e.target.value })}
+                placeholder="Expected answer"
+                className="w-full px-2.5 py-1.5 rounded-md bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
+              />
+            )}
+          </FieldLabel>
+        </div>
       )}
     </div>
   )
@@ -655,6 +847,11 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
           value={survey.style.backgroundColor}
           onChange={(v) => setStyle(surveyId, { backgroundColor: v })}
         />
+        <ColorRow
+          label="Text Color"
+          value={survey.style.textColor}
+          onChange={(v) => setStyle(surveyId, { textColor: v })}
+        />
         <div className="flex items-center justify-between gap-3">
           <label className="text-xs text-text-secondary">Bg Image (R2)</label>
           <label className="relative btn-outline px-2 py-1 text-xs cursor-pointer rounded-lg">
@@ -705,7 +902,7 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
             onChange={(e) => setStyle(surveyId, { fontFamily: e.target.value })}
             className="w-full px-3 py-2 rounded-lg bg-surface-elevated border border-border-subtle focus:border-brand outline-none text-xs"
           >
-            {['Inter', 'Playfair', 'Space Grotesk', 'DM Sans', 'Sora'].map((f) => (
+            {['Inter', 'Playfair', 'Space Grotesk', 'DM Sans', 'Sora', 'Roboto', 'Outfit', 'Merriweather', 'Lora'].map((f) => (
               <option key={f}>{f}</option>
             ))}
           </select>
@@ -1193,12 +1390,25 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
     setTyping(true)
     
     try {
+      // Client-side interception: if user attached an image and wants it as background
+      const bgKeywords = /background|bg|wallpaper|backdrop|behind/i
+      if (currentAttachment && bgKeywords.test(userMsg)) {
+        // Directly apply the image as the survey background — the AI can't return the URL
+        setStyle(surveyId, { backgroundImage: currentAttachment })
+        setMessages((m) => [...m, { 
+          role: 'ai', 
+          text: "Done! I've set your uploaded image as the survey background. You can see it in the preview.", 
+          parsedAction: { action: 'set_background_image', payload: { backgroundImage: currentAttachment } }
+        }])
+        return
+      }
+
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           messages: [
-            { role: 'system', content: 'You are an AI assistant helping a user build a survey. You can chat normally. If the user wants to add questions, return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "...", "options": []}]}. If the user wants to generate a visual style, return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. NEVER include raw JSON or code blocks outside of this structure. Otherwise, just reply in text.' },
+            { role: 'system', content: 'You are an expert survey builder AI. You must be decisive. When a user asks you to generate questions, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "Question text here?", "options": ["Option 1", "Option 2"]}]}. Do NOT ask for clarification before generating questions; make your best guess based on the topic. When a user asks for a visual style, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. If the user attaches an image and asks to use it as a background, respond with: "I\'ve set the image as the background." The backgroundImage will be handled automatically by the system. Do NOT output conversational filler if returning JSON.' },
             ...messages.map(m => ({
               role: m.role === 'ai' ? 'assistant' : 'user',
               content: m.imageUrl ? [
@@ -1214,7 +1424,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
               ] : userMsg
             }
           ],
-          useVision: !!currentAttachment
+          useVision: !!currentAttachment || messages.some(m => !!m.imageUrl)
         })
       })
       if (!res.ok) throw new Error('Failed')
@@ -1308,13 +1518,34 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
               )}
               {m.text}
               {m.parsedAction && m.parsedAction.action === 'add_questions' && (
-                <div className="mt-2 p-2 rounded-lg bg-surface-base border border-border-subtle">
-                  <div className="text-xs font-semibold mb-2 text-text-secondary">Ready to add {m.parsedAction.payload.length} questions</div>
+                <div className="mt-3 p-3 rounded-lg bg-surface-base border border-border-subtle">
+                  <div className="text-xs font-bold mb-3 flex items-center gap-1.5 text-brand">
+                    <Sparkles className="w-3.5 h-3.5" /> Generated {m.parsedAction.payload.length} Questions
+                  </div>
+                  <div className="space-y-3 mb-3 max-h-60 overflow-y-auto pr-1">
+                    {m.parsedAction.payload.map((q: any, idx: number) => (
+                      <div key={idx} className="bg-surface-elevated rounded border border-border-subtle p-2">
+                        <div className="text-xs font-semibold text-text-primary mb-1">
+                          {idx + 1}. {q.text}
+                        </div>
+                        <div className="text-[10px] text-text-muted mb-1 px-1.5 py-0.5 bg-surface-base rounded-md inline-block border border-border-subtle capitalize">
+                          {q.type.replace('-', ' ')}
+                        </div>
+                        {q.options && q.options.length > 0 && (
+                          <ul className="text-xs text-text-secondary mt-1 pl-4 list-disc space-y-0.5">
+                            {q.options.map((opt: string, oIdx: number) => (
+                              <li key={oIdx}>{opt}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                   <button
                     onClick={() => addQuestionsBulk(surveyId, m.parsedAction.payload)}
-                    className="w-full py-1.5 rounded bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition"
+                    className="w-full py-1.5 rounded bg-brand text-surface-base text-xs font-semibold hover:bg-brand/90 transition"
                   >
-                    Execute: Add Questions
+                    Approve & Add
                   </button>
                 </div>
               )}
@@ -1332,6 +1563,18 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
                   >
                     Apply Style
                   </button>
+                </div>
+              )}
+              {m.parsedAction && m.parsedAction.action === 'set_background_image' && (
+                <div className="mt-2 p-2 rounded-lg bg-surface-base border border-border-subtle">
+                  <div className="text-xs font-semibold mb-2 text-text-secondary flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-brand" /> Background Applied
+                  </div>
+                  <img 
+                    src={m.parsedAction.payload.backgroundImage} 
+                    alt="Background" 
+                    className="w-full h-20 object-cover rounded-md border border-border-subtle" 
+                  />
                 </div>
               )}
             </div>
@@ -1371,7 +1614,30 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
                 const file = e.target.files?.[0]
                 if (!file) return
                 const reader = new FileReader()
-                reader.onload = (e) => setAttachmentUrl(e.target?.result as string)
+                reader.onload = (evt) => {
+                  const img = new Image()
+                  img.onload = () => {
+                    const canvas = document.createElement('canvas')
+                    let width = img.width
+                    let height = img.height
+                    const maxDim = 800
+                    if (width > maxDim || height > maxDim) {
+                      if (width > height) {
+                        height = Math.floor(height * (maxDim / width))
+                        width = maxDim
+                      } else {
+                        width = Math.floor(width * (maxDim / height))
+                        height = maxDim
+                      }
+                    }
+                    canvas.width = width
+                    canvas.height = height
+                    const ctx = canvas.getContext('2d')
+                    ctx?.drawImage(img, 0, 0, width, height)
+                    setAttachmentUrl(canvas.toDataURL('image/jpeg', 0.8))
+                  }
+                  img.src = evt.target?.result as string
+                }
                 reader.readAsDataURL(file)
               }}
             />

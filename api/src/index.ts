@@ -15,6 +15,10 @@ app.route('/api/auth', authRouterWithMe)
 // Mount the surveys router
 app.route('/api/surveys', surveysRouter)
 
+import { responsesRouter } from './routes/responses'
+// Mount the responses router
+app.route('/api/responses', responsesRouter)
+
 // Mount the dashboard router
 app.route('/api/dashboard', dashboardRouter)
 

@@ -1,8 +1,9 @@
 import { createFileRoute, useParams } from '@tanstack/react-router'
-import { ArrowRight, Check } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, Check, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { Logo } from '@/components/Logo'
-import { type Question, useSurveyStore } from '@/lib/store'
+import { type Question, useSurveyStore, parseApiSurvey } from '@/lib/store'
+import { api } from '@/lib/api-client'
 
 export const Route = createFileRoute('/s/$publicId')({
   head: () => ({ meta: [{ title: 'Survey — FormCraft' }] }),
@@ -11,17 +12,51 @@ export const Route = createFileRoute('/s/$publicId')({
 
 function PublicSurveyPage() {
   const { publicId } = useParams({ from: '/s/$publicId' })
-  const survey = useSurveyStore((s) => s.surveys.find((x) => x.publicId === publicId))
+  const [survey, setSurvey] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [submitted, setSubmitted] = useState(false)
 
-  if (!survey) {
+  useEffect(() => {
+    const loadSurvey = async () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search)
+        const isPreview = searchParams.get('preview') === 'true'
+        const res = await api.public.getSurvey(publicId + (isPreview ? '?preview=true' : ''))
+        if (!res || res.error) {
+          throw new Error(res?.error || 'Failed to load survey')
+        }
+        const parsed = parseApiSurvey(res.survey, res.questions)
+        setSurvey(parsed)
+      } catch (err: any) {
+        console.error('Failed to load survey:', err)
+        setError(err.message || 'Survey not found or not published')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadSurvey()
+  }, [publicId])
+
+  if (loading) {
     return (
-      <div className="min-h-screen grid place-items-center text-text-secondary p-6 text-center">
+      <div className="min-h-screen grid place-items-center text-text-secondary bg-[#06231D] p-6">
+        <div className="text-center space-y-2">
+          <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto" />
+          <p className="text-sm">Loading survey...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !survey) {
+    return (
+      <div className="min-h-screen grid place-items-center text-text-secondary bg-[#06231D] p-6 text-center">
         <div>
-          <h1 className="text-2xl font-semibold text-text-primary">Survey not found</h1>
-          <p className="mt-1 text-sm">The link may have expired or been removed.</p>
+          <h1 className="text-2xl font-semibold text-text-primary text-white">Survey not found</h1>
+          <p className="mt-1 text-sm">{error || 'The link may have expired or been removed.'}</p>
         </div>
       </div>
     )
@@ -29,7 +64,11 @@ function PublicSurveyPage() {
 
   const { style, settings, layoutMode, questions } = survey
   const bg = {
-    background: style.backgroundColor,
+    backgroundColor: style.backgroundColor,
+    backgroundImage: style.backgroundImage ? `url(${style.backgroundImage})` : 'none',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
     color: style.textColor,
     fontFamily: style.fontFamily,
   }
@@ -56,7 +95,15 @@ function PublicSurveyPage() {
 
   const setAns = (qid: string, v: any) => setAnswers((a) => ({ ...a, [qid]: v }))
 
-  const submit = () => setSubmitted(true)
+  const submit = async () => {
+    try {
+      await api.public.submitResponse(survey.id, answers)
+      setSubmitted(true)
+    } catch (err) {
+      console.error('Failed to submit response:', err)
+      alert('Failed to submit response. Please try again.')
+    }
+  }
 
   if (questions.length === 0) {
     return (

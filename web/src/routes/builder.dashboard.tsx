@@ -13,7 +13,7 @@ import {
   Eye,
   AlertTriangle
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Logo } from '@/components/Logo'
 import { useAuth, useSurveyStore } from '@/lib/store'
 import { api } from '@/lib/api-client'
@@ -237,6 +237,17 @@ function SurveyCard({ survey, onDelete, onCopyLink }: any) {
   const [menuOpen, setMenuOpen] = useState(false)
   const isPublished = !!survey.is_published
 
+  const config = useMemo(() => {
+    try {
+      if (survey.description) return JSON.parse(survey.description)
+    } catch {}
+    return {}
+  }, [survey.description])
+
+  const style = config.style || { primaryColor: '#6C63FF', backgroundColor: '#F0F0FF', cardBackgroundColor: '#FFFFFF' }
+  const surveyType = config.surveyType || 'survey'
+  const typeLabel = surveyType === 'form' ? '📋 Form' : surveyType === 'quiz' ? '🧠 Quiz' : '📊 Survey'
+
   return (
     <div className="group rounded-2xl bg-surface-raised border border-border-subtle card-hover overflow-hidden flex flex-col">
       <Link
@@ -245,18 +256,25 @@ function SurveyCard({ survey, onDelete, onCopyLink }: any) {
         className="block flex-1"
       >
         {/* Preview gradient bar / miniature visual */}
-        <div className="h-28 relative overflow-hidden bg-surface-elevated flex flex-col items-center justify-center p-4">
-          <div className="w-full max-w-[120px] bg-surface-base rounded-lg border border-border-subtle p-2 space-y-2 shadow-sm group-hover:scale-105 transition-transform">
-            <div className="h-1.5 bg-brand/40 rounded-full w-3/4 mx-auto" />
-            <div className="h-1 bg-text-primary/20 rounded-full w-full" />
-            <div className="h-1 bg-text-primary/20 rounded-full w-5/6" />
-            <div className="h-2 bg-brand rounded w-full mt-1" />
+        <div 
+          className="h-28 relative overflow-hidden flex flex-col items-center justify-center p-4 border-b border-border-subtle"
+          style={{ backgroundColor: style.backgroundColor }}
+        >
+          <div 
+            className="w-full max-w-[120px] rounded-lg p-2 space-y-2 shadow-sm group-hover:scale-105 transition-transform"
+            style={{ backgroundColor: style.cardBackgroundColor, border: `1px solid ${style.primaryColor}20` }}
+          >
+            <div className="h-1.5 rounded-full w-3/4 mx-auto" style={{ backgroundColor: `${style.primaryColor}40` }} />
+            <div className="h-1 rounded-full w-full" style={{ backgroundColor: 'currentColor', opacity: 0.2 }} />
+            <div className="h-1 rounded-full w-5/6" style={{ backgroundColor: 'currentColor', opacity: 0.2 }} />
+            <div className="h-2 rounded w-full mt-1" style={{ backgroundColor: style.primaryColor }} />
           </div>
           
           <div
-            className="absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide bg-brand/10 text-brand"
+            className="absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm"
+            style={{ backgroundColor: style.cardBackgroundColor, color: style.primaryColor }}
           >
-            Form
+            {typeLabel}
           </div>
         </div>
 
@@ -308,6 +326,15 @@ function SurveyCard({ survey, onDelete, onCopyLink }: any) {
               {isPublished ? 'Published' : 'Draft'}
             </span>
             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+              <Link
+                to="/analytics/$surveyId"
+                params={{ surveyId: survey.id }}
+                className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition"
+                onClick={(e) => e.stopPropagation()}
+                title="View Analytics"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+              </Link>
               <span className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition">
                 <Edit3 className="w-3.5 h-3.5" />
               </span>

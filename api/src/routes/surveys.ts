@@ -81,25 +81,60 @@ surveysRouter.post('/', async (c) => {
   return c.json({ message: 'Survey created', id: surveyId }, 201)
 })
 
-// Update a survey (title and description)
+// Update a survey (title, description, and questions)
 surveysRouter.put('/:id', async (c) => {
   const user = c.get('user')
   const surveyId = c.req.param('id')
-  const { title, description } = await c.req.json()
+  const { title, description, questions } = await c.req.json()
 
   if (!title) {
     return c.json({ error: 'Title is required' }, 400)
   }
 
-  const { success } = await c.env.DB.prepare(
-    'UPDATE surveys SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?',
+  // Check if the survey already exists for this user
+  const existing = await c.env.DB.prepare(
+    'SELECT id FROM surveys WHERE id = ? AND user_id = ?'
   )
-    .bind(title, description || null, surveyId, user.userId)
-    .run()
+    .bind(surveyId, user.userId)
+    .first()
 
-  if (!success) {
-    return c.json({ error: 'Survey not found or could not be updated' }, 404)
+  if (existing) {
+    await c.env.DB.prepare(
+      'UPDATE surveys SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+    )
+      .bind(title, description || null, surveyId, user.userId)
+      .run()
+  } else {
+    await c.env.DB.prepare(
+      'INSERT INTO surveys (id, user_id, title, description) VALUES (?, ?, ?, ?)'
+    )
+      .bind(surveyId, user.userId, title, description || null)
+      .run()
   }
+
+  // Replace all questions
+  const statements = [
+    c.env.DB.prepare('DELETE FROM questions WHERE survey_id = ?').bind(surveyId)
+  ]
+
+  if (Array.isArray(questions) && questions.length > 0) {
+    questions.forEach((q: any, index: number) => {
+      statements.push(
+        c.env.DB.prepare(
+          'INSERT INTO questions (id, survey_id, type, text, options, order_index) VALUES (?, ?, ?, ?, ?, ?)',
+        ).bind(
+          q.id || crypto.randomUUID(),
+          surveyId,
+          q.type,
+          q.text,
+          q.options ? JSON.stringify(q.options) : null,
+          index,
+        ),
+      )
+    })
+  }
+
+  await c.env.DB.batch(statements)
 
   return c.json({ message: 'Survey updated' })
 })

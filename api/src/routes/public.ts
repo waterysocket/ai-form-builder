@@ -6,13 +6,19 @@ export const publicRouter = new Hono<{ Bindings: Env }>()
 publicRouter.get('/surveys/:id', async (c) => {
   const surveyId = c.req.param('id')
 
-  // First check if it's published
-  const survey = await c.env.DB.prepare('SELECT * FROM surveys WHERE id = ? AND is_published = 1')
+  const preview = c.req.query('preview') === 'true'
+
+  // If preview=true, we don't require the survey to be published.
+  const query = preview 
+    ? 'SELECT * FROM surveys WHERE id = ?' 
+    : 'SELECT * FROM surveys WHERE id = ? AND is_published = 1'
+
+  const survey = await c.env.DB.prepare(query)
     .bind(surveyId)
     .first()
 
   if (!survey) {
-    return c.json({ error: 'Survey not found or not published' }, 404)
+    return c.json({ error: preview ? 'Survey not found' : 'Survey not found or not published' }, 404)
   }
 
   // Increment visits asynchronously

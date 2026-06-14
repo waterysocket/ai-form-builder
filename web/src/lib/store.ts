@@ -20,7 +20,10 @@ export interface Question {
   scale?: 5 | 10
   minLabel?: string
   maxLabel?: string
+  correctAnswer?: string
 }
+
+export type SurveyType = 'form' | 'survey' | 'quiz'
 
 export interface SurveyStyle {
   primaryColor: string
@@ -46,6 +49,7 @@ export interface Survey {
   id: string
   publicId: string
   title: string
+  surveyType: SurveyType
   layoutMode: 'paginated' | 'scrollable'
   questions: Question[]
   style: SurveyStyle
@@ -97,6 +101,7 @@ const seedSurveys: Survey[] = [
     id: 'survey-1',
     publicId: 'fc-abc123',
     title: 'Customer Feedback Form',
+    surveyType: 'form',
     layoutMode: 'paginated',
     questions: sampleQuestions,
     style: defaultStyle,
@@ -108,6 +113,7 @@ const seedSurveys: Survey[] = [
     id: 'survey-2',
     publicId: 'fc-def456',
     title: 'Product Launch Survey',
+    surveyType: 'survey',
     layoutMode: 'scrollable',
     questions: sampleQuestions.slice(0, 2),
     style: { ...defaultStyle, primaryColor: '#22C55E', preset: 'Forest Green' },
@@ -119,6 +125,7 @@ const seedSurveys: Survey[] = [
     id: 'survey-3',
     publicId: 'fc-ghi789',
     title: 'Onboarding Questionnaire',
+    surveyType: 'quiz',
     layoutMode: 'paginated',
     questions: sampleQuestions,
     style: { ...defaultStyle, primaryColor: '#FF6584', preset: 'Sunset Coral' },
@@ -145,6 +152,7 @@ interface SurveyStoreState {
   setSettings: (id: string, patch: Partial<SurveySettings>) => void
   saveCustomStyle: (style: SurveyStyle) => void
   deleteCustomStyle: (presetName: string) => void
+  addOrUpdateSurvey: (survey: Survey) => void
 }
 
 const defaultQuestion = (type: QuestionType): Omit<Question, 'id'> => {
@@ -158,6 +166,81 @@ const defaultQuestion = (type: QuestionType): Omit<Question, 'id'> => {
   return base
 }
 
+export function parseApiSurvey(apiSurvey: any, apiQuestions: any[]): Survey {
+  let style = { ...defaultStyle }
+  let settings = { ...defaultSettings }
+  let layoutMode: 'paginated' | 'scrollable' = 'paginated'
+  let surveyType: SurveyType = 'survey'
+
+  if (apiSurvey.description) {
+    try {
+      const config = JSON.parse(apiSurvey.description)
+      if (config.style) style = { ...style, ...config.style }
+      if (config.settings) settings = { ...settings, ...config.settings }
+      if (config.layoutMode) layoutMode = config.layoutMode
+      if (config.surveyType) surveyType = config.surveyType
+    } catch (e) {
+      console.error('Failed to parse survey description/config', e)
+    }
+  }
+
+  // Sync is_published with status
+  settings = {
+    ...settings,
+    status: apiSurvey.is_published ? 'published' : 'draft',
+  }
+
+  const questions = (apiQuestions || []).map((q: any) => {
+    let options: string[] | undefined = undefined
+    let required = false
+    let scale: 5 | 10 | undefined = undefined
+    let minLabel: string | undefined = undefined
+    let maxLabel: string | undefined = undefined
+
+    if (q.options) {
+      try {
+        const parsed = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          options = parsed.options || undefined
+          required = !!parsed.required
+          scale = parsed.scale || undefined
+          minLabel = parsed.minLabel || undefined
+          maxLabel = parsed.maxLabel || undefined
+          // correctAnswer is stored per-question for quiz mode
+        } else if (Array.isArray(parsed)) {
+          options = parsed
+        }
+      } catch (e) {
+        console.error('Failed to parse question options', e)
+      }
+    }
+    return {
+      id: q.id,
+      type: q.type,
+      text: q.text,
+      required,
+      options,
+      scale,
+      minLabel,
+      maxLabel,
+      correctAnswer: undefined,
+    } as Question
+  })
+
+  return {
+    id: apiSurvey.id,
+    publicId: apiSurvey.id,
+    surveyType,
+    title: apiSurvey.title,
+    layoutMode,
+    questions,
+    style,
+    settings,
+    responses: apiSurvey.responses_count || 0,
+    updatedAt: apiSurvey.updated_at || apiSurvey.created_at,
+  }
+}
+
 export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
   surveys: seedSurveys,
   customStyles: [],
@@ -169,6 +252,7 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
       id,
       publicId: `fc-${Math.random().toString(36).slice(2, 8)}`,
       title: 'Untitled Survey',
+      surveyType: 'survey',
       layoutMode: 'paginated',
       questions: [],
       style: defaultStyle,
@@ -266,6 +350,19 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
     set((s) => ({
       customStyles: s.customStyles.filter((c) => c.preset !== presetName),
     })),
+  addOrUpdateSurvey: (survey) =>
+    set((s) => {
+      const exists = s.surveys.some((x) => x.id === survey.id)
+      if (exists) {
+        return {
+          surveys: s.surveys.map((x) => (x.id === survey.id ? survey : x)),
+        }
+      } else {
+        return {
+          surveys: [...s.surveys, survey],
+        }
+      }
+    }),
 }))
 
 interface AuthState {

@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SPublicIdRouteImport } from './routes/s.$publicId'
 import { Route as BuilderDashboardRouteImport } from './routes/builder.dashboard'
 import { Route as BuilderSurveyIdRouteImport } from './routes/builder.$surveyId'
+import { Route as AnalyticsSurveyIdRouteImport } from './routes/analytics.$surveyId'
 
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
@@ -46,11 +47,17 @@ const BuilderSurveyIdRoute = BuilderSurveyIdRouteImport.update({
   path: '/$surveyId',
   getParentRoute: () => BuilderRoute,
 } as any)
+const AnalyticsSurveyIdRoute = AnalyticsSurveyIdRouteImport.update({
+  id: '/analytics/$surveyId',
+  path: '/analytics/$surveyId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRouteWithChildren
+  '/analytics/$surveyId': typeof AnalyticsSurveyIdRoute
   '/builder/$surveyId': typeof BuilderSurveyIdRoute
   '/builder/dashboard': typeof BuilderDashboardRoute
   '/s/$publicId': typeof SPublicIdRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRouteWithChildren
+  '/analytics/$surveyId': typeof AnalyticsSurveyIdRoute
   '/builder/$surveyId': typeof BuilderSurveyIdRoute
   '/builder/dashboard': typeof BuilderDashboardRoute
   '/s/$publicId': typeof SPublicIdRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/builder': typeof BuilderRouteWithChildren
+  '/analytics/$surveyId': typeof AnalyticsSurveyIdRoute
   '/builder/$surveyId': typeof BuilderSurveyIdRoute
   '/builder/dashboard': typeof BuilderDashboardRoute
   '/s/$publicId': typeof SPublicIdRoute
@@ -78,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/builder'
+    | '/analytics/$surveyId'
     | '/builder/$surveyId'
     | '/builder/dashboard'
     | '/s/$publicId'
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/builder'
+    | '/analytics/$surveyId'
     | '/builder/$surveyId'
     | '/builder/dashboard'
     | '/s/$publicId'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/builder'
+    | '/analytics/$surveyId'
     | '/builder/$surveyId'
     | '/builder/dashboard'
     | '/s/$publicId'
@@ -103,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BuilderRoute: typeof BuilderRouteWithChildren
+  AnalyticsSurveyIdRoute: typeof AnalyticsSurveyIdRoute
   SPublicIdRoute: typeof SPublicIdRoute
 }
 
@@ -150,6 +163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuilderSurveyIdRouteImport
       parentRoute: typeof BuilderRoute
     }
+    '/analytics/$surveyId': {
+      id: '/analytics/$surveyId'
+      path: '/analytics/$surveyId'
+      fullPath: '/analytics/$surveyId'
+      preLoaderRoute: typeof AnalyticsSurveyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -170,6 +190,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BuilderRoute: BuilderRouteWithChildren,
+  AnalyticsSurveyIdRoute: AnalyticsSurveyIdRoute,
   SPublicIdRoute: SPublicIdRoute,
 }
 export const routeTree = rootRouteImport

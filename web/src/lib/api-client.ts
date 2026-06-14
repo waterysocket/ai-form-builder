@@ -29,6 +29,7 @@ export const api = {
     delete: (id: string) => fetchWithAuth(`/surveys/${id}`, { method: 'DELETE' }),
     publish: (id: string) => fetchWithAuth(`/surveys/${id}/publish`, { method: 'PUT' }),
     unpublish: (id: string) => fetchWithAuth(`/surveys/${id}/unpublish`, { method: 'PUT' }),
+    analytics: (id: string) => fetchWithAuth(`/responses/${id}`),
   },
   dashboard: {
     metrics: () => fetchWithAuth('/dashboard'),
