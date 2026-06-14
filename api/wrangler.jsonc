@@ -20,9 +20,8 @@
       "binding": "AUTH_KV",
       "id": "857bd9a906004cce83621c0ccb61f5e0"
     }
+  ],
+  "r2_buckets": [
+    { "binding": "ASSETS", "bucket_name": "ai-form-builder-assets" }
   ]
-  //
-  // "r2_buckets": [
-  //   { "binding": "ASSETS", "bucket_name": "survey-builder-assets" }
-  // ]
 }

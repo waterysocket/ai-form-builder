@@ -36,6 +36,7 @@ const TYPES: { v: QuestionType; label: string; icon: string }[] = [
   { v: 'number', label: 'Number', icon: '#️⃣' },
   { v: 'dropdown', label: 'Dropdown', icon: '▾' },
   { v: 'date', label: 'Date', icon: '📅' },
+  { v: 'image', label: 'Image Upload', icon: '🖼️' },
 ]
 
 const PRESETS = [
@@ -224,8 +225,12 @@ function BuilderPage() {
 
         {/* CANVAS */}
         <main
-          className="flex-1 overflow-auto relative"
-          style={{ background: survey.style.backgroundColor, color: survey.style.textColor }}
+          className="flex-1 overflow-auto relative bg-cover bg-center"
+          style={{ 
+            backgroundColor: survey.style.backgroundColor, 
+            backgroundImage: survey.style.backgroundImage ? `url(${survey.style.backgroundImage})` : 'none',
+            color: survey.style.textColor 
+          }}
         >
           <Canvas survey={survey} selected={selected} onSelect={setSelected} />
           {/* AI floating btn */}
@@ -557,36 +562,36 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
   const [aiPrompt, setAiPrompt] = useState('')
   const [generating, setGenerating] = useState(false)
 
-  const generateStyle = () => {
+  const customStyles = useSurveyStore((s) => s.customStyles)
+  const saveCustomStyle = useSurveyStore((s) => s.saveCustomStyle)
+  const deleteCustomStyle = useSurveyStore((s) => s.deleteCustomStyle)
+
+  const generateStyle = async () => {
+    if (!aiPrompt.trim()) return
     setGenerating(true)
-    setTimeout(() => {
-      const picks = [
-        {
-          primaryColor: '#F59E0B',
-          backgroundColor: '#1A1208',
-          cardColor: '#2A1D0E',
-          textColor: '#FFF8E8',
-          preset: 'Custom AI',
-        },
-        {
-          primaryColor: '#06B6D4',
-          backgroundColor: '#0A1820',
-          cardColor: '#10242E',
-          textColor: '#E8F8FE',
-          preset: 'Custom AI',
-        },
-        {
-          primaryColor: '#D946EF',
-          backgroundColor: '#170A1E',
-          cardColor: '#251030',
-          textColor: '#FCE8FE',
-          preset: 'Custom AI',
-        },
-      ]
-      setStyle(surveyId, picks[Math.floor(Math.random() * picks.length)])
+    try {
+      const res = await fetch('/api/ai/style', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: aiPrompt })
+      })
+      if (!res.ok) throw new Error('Failed to generate style')
+      const stylePatch = await res.json()
+      setStyle(surveyId, stylePatch)
+      showToast('AI style applied')
+    } catch (e) {
+      console.error(e)
+      showToast('Error generating style')
+    } finally {
       setGenerating(false)
-      showToast('Style applied')
-    }, 1500)
+    }
+  }
+
+  const handleSaveStyle = () => {
+    const name = prompt('Name your custom style:')
+    if (!name) return
+    saveCustomStyle({ ...survey.style, preset: name })
+    showToast('Style saved')
   }
 
   return (
@@ -596,25 +601,44 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
           Presets
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {PRESETS.map((p) => (
-            <button
-              key={p.name}
-              onClick={() => setStyle(surveyId, p)}
-              className={`rounded-lg border overflow-hidden text-left transition ${survey.style.preset === p.name ? 'border-brand ring-1 ring-brand' : 'border-border-subtle hover:border-border-strong'}`}
-            >
-              <div className="h-12 p-2" style={{ background: p.backgroundColor }}>
-                <div className="h-2 w-12 rounded" style={{ background: p.primaryColor }} />
-                <div
-                  className="mt-1 h-1.5 w-16 rounded opacity-60"
-                  style={{ background: p.textColor }}
-                />
-              </div>
-              <div className="px-2 py-1.5 text-[11px] font-medium bg-surface-elevated">
-                {p.name}
-              </div>
-            </button>
+          {[...PRESETS, ...customStyles].map((p) => (
+            <div key={p.name || p.preset} className="relative group">
+              <button
+                onClick={() => setStyle(surveyId, p)}
+                className={`w-full rounded-lg border overflow-hidden text-left transition ${(survey.style.preset === p.name || survey.style.preset === p.preset) ? 'border-brand ring-1 ring-brand' : 'border-border-subtle hover:border-border-strong'}`}
+              >
+                <div className="h-12 p-2" style={{ background: p.backgroundColor }}>
+                  <div className="h-2 w-12 rounded" style={{ background: p.primaryColor }} />
+                  <div
+                    className="mt-1 h-1.5 w-16 rounded opacity-60"
+                    style={{ background: p.textColor }}
+                  />
+                </div>
+                <div className="px-2 py-1.5 text-[11px] font-medium bg-surface-elevated">
+                  {p.name || p.preset}
+                </div>
+              </button>
+              {p.preset && customStyles.includes(p) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteCustomStyle(p.preset!)
+                    showToast('Style deleted')
+                  }}
+                  className="absolute top-1 right-1 p-1 bg-surface-raised rounded-md opacity-0 group-hover:opacity-100 text-danger shadow-sm hover:bg-surface-elevated"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
+        <button
+          onClick={handleSaveStyle}
+          className="w-full mt-2 py-1.5 rounded-lg border border-dashed border-border-strong text-xs text-text-secondary hover:text-text-primary hover:border-brand"
+        >
+          + Save current style
+        </button>
       </div>
 
       <div className="space-y-3">
@@ -631,6 +655,44 @@ function StylePanel({ surveyId, showToast }: { surveyId: string; showToast: (m: 
           value={survey.style.backgroundColor}
           onChange={(v) => setStyle(surveyId, { backgroundColor: v })}
         />
+        <div className="flex items-center justify-between gap-3">
+          <label className="text-xs text-text-secondary">Bg Image (R2)</label>
+          <label className="relative btn-outline px-2 py-1 text-xs cursor-pointer rounded-lg">
+            {survey.style.backgroundImage ? 'Change' : 'Upload'}
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 w-0 h-0 opacity-0"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                showToast('Uploading...')
+                const fd = new FormData()
+                fd.append('file', file)
+                try {
+                  const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                  if (!res.ok) throw new Error('Upload failed')
+                  const { url } = await res.json()
+                  setStyle(surveyId, { backgroundImage: url })
+                  showToast('Image uploaded')
+                } catch (err) {
+                  showToast('Error uploading')
+                }
+              }}
+            />
+          </label>
+        </div>
+        {survey.style.backgroundImage && (
+          <div className="flex items-center justify-between gap-3 mt-1">
+            <span className="text-xs truncate text-text-muted">Image active</span>
+            <button
+              onClick={() => setStyle(surveyId, { backgroundImage: undefined })}
+              className="text-xs text-danger hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -1059,6 +1121,17 @@ function renderInput(q: Question, style: any) {
         style={{ ...inputBase, borderColor: style.primaryColor + '30' }}
       />
     )
+  if (q.type === 'image')
+    return (
+      <div 
+        className="w-full px-3 py-6 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 opacity-60"
+        style={{ ...inputBase, borderColor: style.primaryColor + '50' }}
+      >
+        <span className="text-2xl">🖼️</span>
+        <span className="text-sm font-medium">Click to upload image</span>
+        <span className="text-xs opacity-70">PNG, JPG, GIF</span>
+      </div>
+    )
   return null
 }
 
@@ -1091,30 +1164,83 @@ const PRESET_PROMPTS = [
 ]
 
 function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void }) {
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([
+  const addQuestion = useSurveyStore((s) => s.addQuestion)
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string; parsedAction?: any; imageUrl?: string }[]>([
     {
       role: 'ai',
       text: "Hi! I'm your AI assistant. I can help you write questions, style your survey, or improve your wording. What can I help with?",
     },
   ])
   const [input, setInput] = useState('')
+  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null)
   const [typing, setTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, typing])
 
-  const send = () => {
-    if (!input.trim()) return
+  const send = async () => {
+    if ((!input.trim() && !attachmentUrl) || typing) return
     const userMsg = input.trim()
-    setMessages((m) => [...m, { role: 'user', text: userMsg }])
+    const currentAttachment = attachmentUrl
+    setMessages((m) => [...m, { role: 'user', text: userMsg, imageUrl: currentAttachment || undefined }])
     setInput('')
+    setAttachmentUrl(null)
+    if (inputRef.current) inputRef.current.style.height = 'auto'
     setTyping(true)
-    setTimeout(() => {
+    
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          messages: [
+            { role: 'system', content: 'You are an AI assistant helping a user build a survey. You can chat normally. If the user wants to add questions, return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "...", "options": []}]}. Otherwise, just reply in text.' },
+            ...messages.map(m => ({
+              role: m.role === 'ai' ? 'assistant' : 'user',
+              content: m.imageUrl ? [
+                { type: 'text', text: m.text },
+                { type: 'image_url', image_url: { url: m.imageUrl } }
+              ] : m.text
+            })),
+            {
+              role: 'user',
+              content: currentAttachment ? [
+                { type: 'text', text: userMsg || 'Analyze this image.' },
+                { type: 'image_url', image_url: { url: currentAttachment } }
+              ] : userMsg
+            }
+          ],
+          useVision: !!currentAttachment
+        })
+      })
+      if (!res.ok) throw new Error('Failed')
+      const data = await res.json()
+      let replyText = data.choices?.[0]?.message?.content || 'Sorry, I encountered an error.'
+      
+      let parsedAction = null
+      const jsonMatch = replyText.match(/```json\n([\s\S]*?)\n```/)
+      if (jsonMatch) {
+        try {
+          parsedAction = JSON.parse(jsonMatch[1])
+          replyText = replyText.replace(jsonMatch[0], '').trim()
+        } catch (e) {}
+      }
+
+      setMessages((m) => [...m, { role: 'ai', text: replyText, parsedAction }])
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'ai', text: 'Error connecting to AI.' }])
+    } finally {
       setTyping(false)
-      setMessages((m) => [...m, { role: 'ai', text: mockAiReply(userMsg) }])
-    }, 1500)
+    }
+  }
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
   }
 
   return (
@@ -1145,7 +1271,10 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
           {PRESET_PROMPTS.map((p) => (
             <button
               key={p.label}
-              onClick={() => setInput(p.prompt)}
+              onClick={() => {
+                setInput(p.prompt)
+                setTimeout(() => inputRef.current?.focus(), 10)
+              }}
               className="px-2.5 py-1 rounded-full text-[11px] bg-surface-elevated border border-border-subtle hover:border-brand hover:text-text-primary text-text-secondary transition"
             >
               {p.label}
@@ -1168,7 +1297,22 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
             <div
               className={`max-w-[85%] px-3 py-2.5 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-brand text-surface-base font-medium rounded-tr-sm' : 'bg-surface-elevated text-text-primary rounded-tl-sm'}`}
             >
+              {m.imageUrl && (
+                <img src={m.imageUrl} alt="attachment" className="w-full max-h-32 object-cover rounded-lg mb-2 opacity-90" />
+              )}
               {m.text}
+              {m.parsedAction && m.parsedAction.action === 'add_questions' && (
+                <button
+                  onClick={() => {
+                    m.parsedAction.payload.forEach((q: any) => {
+                      addQuestion(surveyId, q.type || 'short-text')
+                    })
+                  }}
+                  className="mt-2 w-full py-1.5 rounded bg-brand/10 text-brand text-xs font-semibold hover:bg-brand/20 transition"
+                >
+                  Execute: Add Questions
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -1187,14 +1331,38 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
       </div>
 
       <div className="p-3 border-t border-border-subtle">
+        {attachmentUrl && (
+          <div className="relative inline-block mb-2">
+            <img src={attachmentUrl} alt="preview" className="h-16 w-16 object-cover rounded-lg border border-border-subtle" />
+            <button onClick={() => setAttachmentUrl(null)} className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-surface-raised border border-border-subtle text-text-secondary rounded-full flex items-center justify-center text-[10px] hover:text-danger hover:border-danger">
+              ✕
+            </button>
+          </div>
+        )}
         <div className="flex gap-2 items-end">
+          <label className="p-2.5 rounded-xl bg-surface-elevated hover:bg-surface-raised border border-border-subtle text-text-secondary cursor-pointer transition">
+            <Plus className="w-4 h-4" />
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = (e) => setAttachmentUrl(e.target?.result as string)
+                reader.readAsDataURL(file)
+              }}
+            />
+          </label>
           <textarea
+            ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInput}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                send()
+                if (input.trim() || attachmentUrl) send()
               }
             }}
             rows={1}
@@ -1203,7 +1371,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
           />
           <button
             onClick={send}
-            disabled={!input.trim()}
+            disabled={!input.trim() && !attachmentUrl}
             className="p-2.5 rounded-xl btn-brand hover:shadow-brand-glow disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
@@ -1223,15 +1391,4 @@ function Dot({ delay }: { delay: number }) {
   )
 }
 
-function mockAiReply(userMsg: string): string {
-  const m = userMsg.toLowerCase()
-  if (m.includes('generate') && m.includes('question'))
-    return "Here are 5 question ideas:\n\n1. What's your name?\n2. Which feature do you use most often?\n3. How likely are you to recommend us? (1–10)\n4. What's one thing we could improve?\n5. Any other feedback?\n\nWant me to add these to your survey?"
-  if (m.includes('style') || m.includes('vibe'))
-    return "Got it! I'll generate a custom style. Try the 'Generate Style' button in the Style tab — it'll create a complete theme based on your vibe description."
-  if (m.includes('shorter') || m.includes('short'))
-    return "I'd suggest keeping these 3 essential questions:\n• Name\n• Primary feedback (long text)\n• Rating (1–5)\n\nShorter surveys see 40% higher completion rates."
-  if (m.includes('refine') || m.includes('language'))
-    return "Looking at your questions, I'd suggest:\n• Be more specific in Q1\n• Add a clear scale label to Q3\n• Make Q4 optional to reduce friction\n\nWant me to apply these changes?"
-  return "Got it. I'll keep that in mind as we build out your survey. Anything else you'd like to tweak?"
-}
+

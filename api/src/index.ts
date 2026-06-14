@@ -21,6 +21,19 @@ app.route('/api/dashboard', dashboardRouter)
 // Mount the public router (no auth required)
 app.route('/api/public', publicRouter)
 
+import { aiRouter } from './routes/ai'
+import { uploadRouter, assetsRouter } from './routes/upload'
+
+// Mount the AI router
+app.route('/api/ai', aiRouter)
+
+// Mount the Upload router (requires auth in a real app, maybe)
+app.use('/api/upload/*', authMiddleware)
+app.route('/api/upload', uploadRouter)
+
+// Mount the Assets router to serve files
+app.route('/api/assets', assetsRouter)
+
 // Example protected route using authMiddleware
 app.get('/api/protected', authMiddleware, (c) => {
   const user = c.get('user')

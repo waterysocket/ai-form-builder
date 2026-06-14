@@ -9,6 +9,7 @@ export type QuestionType =
   | 'number'
   | 'dropdown'
   | 'date'
+  | 'image'
 
 export interface Question {
   id: string
@@ -29,6 +30,7 @@ export interface SurveyStyle {
   fontFamily: string
   questionSize: 'S' | 'M' | 'L'
   preset?: string
+  backgroundImage?: string
 }
 
 export interface SurveySettings {
@@ -128,6 +130,7 @@ const seedSurveys: Survey[] = [
 
 interface SurveyStoreState {
   surveys: Survey[]
+  customStyles: SurveyStyle[]
   getSurvey: (id: string) => Survey | undefined
   getSurveyByPublicId: (pid: string) => Survey | undefined
   createSurvey: () => Survey
@@ -139,6 +142,8 @@ interface SurveyStoreState {
   moveQuestion: (id: string, qid: string, dir: -1 | 1) => void
   setStyle: (id: string, patch: Partial<SurveyStyle>) => void
   setSettings: (id: string, patch: Partial<SurveySettings>) => void
+  saveCustomStyle: (style: SurveyStyle) => void
+  deleteCustomStyle: (presetName: string) => void
 }
 
 const defaultQuestion = (type: QuestionType): Omit<Question, 'id'> => {
@@ -154,6 +159,7 @@ const defaultQuestion = (type: QuestionType): Omit<Question, 'id'> => {
 
 export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
   surveys: seedSurveys,
+  customStyles: [],
   getSurvey: (id) => get().surveys.find((s) => s.id === id),
   getSurveyByPublicId: (pid) => get().surveys.find((s) => s.publicId === pid),
   createSurvey: () => {
@@ -232,6 +238,14 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
       surveys: s.surveys.map((x) =>
         x.id === id ? { ...x, settings: { ...x.settings, ...patch } } : x,
       ),
+    })),
+  saveCustomStyle: (style) =>
+    set((s) => ({
+      customStyles: [...s.customStyles, style],
+    })),
+  deleteCustomStyle: (presetName) =>
+    set((s) => ({
+      customStyles: s.customStyles.filter((c) => c.preset !== presetName),
     })),
 }))
 
