@@ -51,25 +51,25 @@
 }
 
 :root {
-  --brand-primary: #E3EF26;
+  --brand-primary: #e3ef26;
   --brand-secondary: #d6fb00;
   --brand-dark: #076653;
   --brand-teal: #00545f;
 
-  --surface-base: #06231D;
-  --surface-raised: #0C342C;
+  --surface-base: #06231d;
+  --surface-raised: #0c342c;
   --surface-elevated: #0f4035;
 
   --border-subtle: #1a5c4a;
   --border-strong: #276b58;
 
-  --text-primary: #FFFDEE;
-  --text-secondary: #E2FBCE;
+  --text-primary: #fffdee;
+  --text-secondary: #e2fbce;
   --text-muted: #76a98f;
 
   --success: #d6fb00;
-  --warning: #F59E0B;
-  --danger: #EF4444;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
   --background: var(--surface-base);
   --foreground: var(--text-primary);
@@ -79,7 +79,9 @@
   border-color: var(--border-subtle);
 }
 
-html, body, #root {
+html,
+body,
+#root {
   background-color: var(--surface-base);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -89,7 +91,7 @@ html, body, #root {
 
 @layer utilities {
   .text-gradient-brand {
-    background: linear-gradient(135deg, #E3EF26 0%, #d6fb00 50%, #E2FBCE 100%);
+    background: linear-gradient(135deg, #e3ef26 0%, #d6fb00 50%, #e2fbce 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -106,7 +108,7 @@ html, body, #root {
   }
   .bg-mesh-gradient {
     background:
-      radial-gradient(ellipse at 15% 25%, rgba(227, 239, 38, 0.10) 0%, transparent 55%),
+      radial-gradient(ellipse at 15% 25%, rgba(227, 239, 38, 0.1) 0%, transparent 55%),
       radial-gradient(ellipse at 85% 75%, rgba(7, 102, 83, 0.22) 0%, transparent 55%),
       radial-gradient(ellipse at 50% 5%, rgba(0, 84, 95, 0.12) 0%, transparent 45%);
   }
@@ -120,8 +122,8 @@ html, body, #root {
     border: 1px solid rgba(255, 253, 238, 0.12);
   }
   .btn-brand {
-    background: linear-gradient(135deg, #E3EF26, #d6fb00);
-    color: #06231D;
+    background: linear-gradient(135deg, #e3ef26, #d6fb00);
+    color: #06231d;
     font-weight: 700;
     transition: all 0.2s ease;
   }
@@ -136,7 +138,7 @@ html, body, #root {
     transition: all 0.2s ease;
   }
   .btn-outline:hover {
-    border-color: #E3EF26;
+    border-color: #e3ef26;
     background: rgba(227, 239, 38, 0.07);
   }
   .card-hover {
@@ -152,10 +154,85 @@ html, body, #root {
 
 ::selection {
   background: rgba(227, 239, 38, 0.35);
-  color: #06231D;
+  color: #06231d;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--surface-base); }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--brand-dark); }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface-base);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-dark);
+}
+
+/* ==========================================
+   Builder Theme overrides (Antigravity Grey)
+   ========================================== */
+.builder-theme {
+  --surface-base: #09090b; /* Zinc 950 (Neutral Dark base) */
+  --surface-raised: #18181b; /* Zinc 900 */
+  --surface-elevated: #27272a; /* Zinc 800 */
+
+  --border-subtle: #222225; /* Zinc 800 subtle */
+  --border-strong: #3f3f46; /* Zinc 700 */
+
+  --text-primary: #fafafa; /* Zinc 50 */
+  --text-secondary: #d4d4d8; /* Zinc 200 */
+  --text-muted: #a1a1aa; /* Zinc 400 */
+
+  --brand-primary: #ffffff; /* Pure white for accents and buttons */
+  --brand-secondary: #f4f4f5; /* Zinc 100 */
+  --brand-dark: #3f3f46; /* Zinc 700 */
+}
+
+/* Glass override for header and toast in builder */
+.builder-theme .glass {
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(12px);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Button brand overrides - removed so it uses original gradient */
+
+/* Button outline override */
+.builder-theme .btn-outline {
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+.builder-theme .btn-outline:hover {
+  border-color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Glow override */
+.builder-theme .shadow-brand-glow {
+  box-shadow: 0 0 24px rgba(227, 239, 38, 0.45) !important;
+}
+
+/* Text selections */
+.builder-theme ::selection {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+}
+
+/* Active buttons on selection (tabs, scale selectors, toggles) */
+.builder-theme button.bg-brand {
+  background: linear-gradient(135deg, #E3EF26, #d6fb00) !important;
+  color: #06231D !important;
+}
+
+/* Custom AI Avatar background override */
+.builder-theme .bg-gradient-to-br.from-brand.to-brand-dark {
+  background: linear-gradient(135deg, #3f3f46, #18181b) !important;
+  color: var(--text-primary) !important;
+}

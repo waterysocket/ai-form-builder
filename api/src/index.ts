@@ -1,7 +1,6 @@
 import { Hono } from 'hono'
-import { authRouter } from './routes/auth'
-import { authRouterWithMe } from './routes/auth'
-import { authMiddleware, type AuthVariables } from './middleware/auth'
+import { type AuthVariables, authMiddleware } from './middleware/auth'
+import { authRouter, authRouterWithMe } from './routes/auth'
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>()
 

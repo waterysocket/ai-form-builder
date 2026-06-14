@@ -1,46 +1,55 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Plus, Search, MoreHorizontal, Share2, Edit3, LogOut, ChevronDown, BarChart3 } from "lucide-react";
-import { useState } from "react";
-import { Logo } from "@/components/Logo";
-import { useAuth, useSurveyStore } from "@/lib/store";
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  BarChart3,
+  ChevronDown,
+  Edit3,
+  LogOut,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Share2,
+} from 'lucide-react'
+import { useState } from 'react'
+import { Logo } from '@/components/Logo'
+import { useAuth, useSurveyStore } from '@/lib/store'
 
-export const Route = createFileRoute("/builder/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — FormCraft" }] }),
+export const Route = createFileRoute('/builder/dashboard')({
+  head: () => ({ meta: [{ title: 'Dashboard — FormCraft' }] }),
   component: DashboardPage,
-});
+})
 
 function DashboardPage() {
-  const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const surveys = useSurveyStore((s) => s.surveys);
-  const createSurvey = useSurveyStore((s) => s.createSurvey);
-  const [q, setQ] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate()
+  const { user, signOut } = useAuth()
+  const surveys = useSurveyStore((s) => s.surveys)
+  const createSurvey = useSurveyStore((s) => s.createSurvey)
+  const [q, setQ] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  const filtered = surveys.filter((s) =>
-    s.title.toLowerCase().includes(q.toLowerCase())
-  );
+  const filtered = surveys.filter((s) => s.title.toLowerCase().includes(q.toLowerCase()))
 
   const handleNew = () => {
-    const s = createSurvey();
-    navigate({ to: "/builder/$surveyId", params: { surveyId: s.id } });
-  };
+    const s = createSurvey()
+    navigate({ to: '/builder/$surveyId', params: { surveyId: s.id } })
+  }
 
-  const totalResponses = surveys.reduce((a, s) => a + s.responses, 0);
+  const totalResponses = surveys.reduce((a, s) => a + s.responses, 0)
 
   return (
     <div className="min-h-screen bg-surface-base">
       {/* Header */}
       <header className="border-b border-border-subtle glass sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/"><Logo /></Link>
+          <Link to="/">
+            <Logo />
+          </Link>
           <div className="relative">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-surface-elevated transition"
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand to-brand-dark grid place-items-center text-surface-base text-sm font-bold">
-                {user?.name?.[0]?.toUpperCase() ?? "U"}
+                {user?.name?.[0]?.toUpperCase() ?? 'U'}
               </div>
               <span className="text-sm text-text-secondary hidden sm:block">{user?.name}</span>
               <ChevronDown className="w-4 h-4 text-text-muted" />
@@ -59,7 +68,10 @@ function DashboardPage() {
                 </button>
                 <div className="border-t border-border-subtle mt-1 pt-1">
                   <button
-                    onClick={() => { signOut(); navigate({ to: "/" }); }}
+                    onClick={() => {
+                      signOut()
+                      navigate({ to: '/' })
+                    }}
                     className="w-full px-4 py-2.5 text-left hover:bg-surface-elevated text-danger flex items-center gap-2 transition"
                   >
                     <LogOut className="w-3.5 h-3.5" /> Sign out
@@ -76,7 +88,10 @@ function DashboardPage() {
         <div className="grid sm:grid-cols-3 gap-4 mb-10">
           <StatCard label="Total Surveys" value={surveys.length.toString()} />
           <StatCard label="Total Responses" value={totalResponses.toString()} />
-          <StatCard label="Published" value={surveys.filter(s => s.settings.status === "published").length.toString()} />
+          <StatCard
+            label="Published"
+            value={surveys.filter((s) => s.settings.status === 'published').length.toString()}
+          />
         </div>
 
         {/* Title + actions */}
@@ -84,7 +99,8 @@ function DashboardPage() {
           <div>
             <h1 className="text-3xl font-bold text-text-primary">Your Surveys</h1>
             <p className="text-text-secondary mt-1 text-sm">
-              {surveys.length} {surveys.length === 1 ? "survey" : "surveys"} · {totalResponses} responses
+              {surveys.length} {surveys.length === 1 ? 'survey' : 'surveys'} · {totalResponses}{' '}
+              responses
             </p>
           </div>
           <button
@@ -133,11 +149,11 @@ function DashboardPage() {
                   <div
                     className="absolute top-3 left-3 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide"
                     style={{
-                      background: s.style.primaryColor + "25",
+                      background: s.style.primaryColor + '25',
                       color: s.style.primaryColor,
                     }}
                   >
-                    {s.style.preset ?? "Custom"}
+                    {s.style.preset ?? 'Custom'}
                   </div>
                 </div>
                 <div className="p-4">
@@ -161,15 +177,15 @@ function DashboardPage() {
                   <div className="mt-3 flex items-center justify-between">
                     <span
                       className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                        s.settings.status === "published" ? "text-brand" : "text-text-muted"
+                        s.settings.status === 'published' ? 'text-brand' : 'text-text-muted'
                       }`}
                     >
                       <span
                         className={`w-1.5 h-1.5 rounded-full ${
-                          s.settings.status === "published" ? "bg-brand" : "bg-text-muted"
+                          s.settings.status === 'published' ? 'bg-brand' : 'bg-text-muted'
                         }`}
                       />
-                      {s.settings.status === "published" ? "Published" : "Draft"}
+                      {s.settings.status === 'published' ? 'Published' : 'Draft'}
                     </span>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                       <span className="p-1.5 rounded-lg hover:bg-surface-elevated text-text-secondary transition">
@@ -187,7 +203,7 @@ function DashboardPage() {
         )}
       </main>
     </div>
-  );
+  )
 }
 
 function StatCard({ label, value }: { label: string; value: string }) {
@@ -196,7 +212,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <div className="text-text-muted text-xs font-semibold uppercase tracking-widest">{label}</div>
       <div className="mt-2 text-3xl font-bold text-brand">{value}</div>
     </div>
-  );
+  )
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
@@ -214,5 +230,5 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         <Plus className="w-4 h-4" /> Create your first survey
       </button>
     </div>
-  );
+  )
 }

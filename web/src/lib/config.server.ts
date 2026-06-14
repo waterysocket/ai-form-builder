@@ -1,4 +1,4 @@
-import process from "node:process";
+import process from 'node:process'
 
 // Server-only config. The .server.ts suffix prevents Vite from bundling
 // this file into the client — values here never reach the browser.
@@ -22,5 +22,5 @@ export function getServerConfig() {
     // Add server-only values here, e.g.:
     //   databaseUrl: process.env.DATABASE_URL,
     //   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-  };
+  }
 }

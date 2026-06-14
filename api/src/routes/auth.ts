@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
 export const authRouter = new Hono<{ Bindings: Env }>()
 
@@ -45,14 +45,14 @@ authRouter.get('/verify', async (c) => {
   await c.env.AUTH_KV.delete(`magic:${token}`)
 
   // Look up an existing user in D1 or create one
-  let user = await c.env.DB.prepare('SELECT id, email FROM users WHERE email = ?').bind(email).first<{ id: string, email: string }>()
+  const user = await c.env.DB.prepare('SELECT id, email FROM users WHERE email = ?')
+    .bind(email)
+    .first<{ id: string; email: string }>()
   let userId = user?.id
 
   if (!userId) {
     userId = crypto.randomUUID()
-    await c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?)')
-      .bind(userId, email)
-      .run()
+    await c.env.DB.prepare('INSERT INTO users (id, email) VALUES (?, ?)').bind(userId, email).run()
   }
 
   // Create a new session
@@ -60,11 +60,13 @@ authRouter.get('/verify', async (c) => {
   const sessionData = {
     userId,
     email,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   }
 
   // Store the session in KV. Set an appropriate TTL for sessions, e.g., 7 days (604800 seconds)
-  await c.env.AUTH_KV.put(`session:${sessionToken}`, JSON.stringify(sessionData), { expirationTtl: 604800 })
+  await c.env.AUTH_KV.put(`session:${sessionToken}`, JSON.stringify(sessionData), {
+    expirationTtl: 604800,
+  })
 
   // Set the session cookie
   setCookie(c, 'session', sessionToken, {
@@ -72,7 +74,7 @@ authRouter.get('/verify', async (c) => {
     secure: true, // In production this should be true. Localhost is considered secure context.
     sameSite: 'Lax',
     path: '/',
-    maxAge: 604800
+    maxAge: 604800,
   })
 
   // Redirect to frontend or return success. Returning JSON for simplicity in API.
@@ -96,7 +98,7 @@ authRouter.post('/logout', async (c) => {
   return c.json({ message: 'Logged out successfully' })
 })
 
-import { authMiddleware, AuthVariables } from '../middleware/auth'
+import { type AuthVariables, authMiddleware } from '../middleware/auth'
 
 export const authRouterWithMe = new Hono<{ Bindings: Env; Variables: AuthVariables }>()
 authRouterWithMe.route('/', authRouter)
