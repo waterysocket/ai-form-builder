@@ -188,19 +188,19 @@ function BuilderPage() {
     const isPublished = survey.settings.status === 'published'
     setPublishing(true)
     try {
-      const newStatus = isPublished ? 'draft' : 'published'
-      const updatedSurvey = { ...survey, settings: { ...survey.settings, status: newStatus } }
-
-      // Save the updated JSON state to the backend
-      await api.surveys.update(survey.id, updatedSurvey)
-
+      if (!isPublished) {
+        await handleSave() // auto-save before publishing
+      }
       if (isPublished) {
         await api.surveys.unpublish(survey.id)
       } else {
         await api.surveys.publish(survey.id)
       }
 
+      const newStatus = isPublished ? 'draft' : 'published'
       update(survey.id, { settings: { ...survey.settings, status: newStatus } })
+
+      const updatedSurvey = { ...survey, settings: { ...survey.settings, status: newStatus } }
       savedSurveyRef.current = JSON.stringify(updatedSurvey)
 
       showToast(isPublished ? 'Survey unpublished' : 'Survey published')
