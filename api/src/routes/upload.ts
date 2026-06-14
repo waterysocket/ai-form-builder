@@ -15,14 +15,14 @@ uploadRouter.post('/', async (c) => {
     const ext = file.name.split('.').pop()
     const key = `uploads/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
 
-    // Ensure the R2 binding is available
-    if (!c.env.ASSETS) {
-      return c.json({ error: 'R2 bucket not configured' }, 500)
+    // Ensure the KV binding is available
+    if (!c.env.ASSETS_KV) {
+      return c.json({ error: 'KV bucket not configured' }, 500)
     }
 
-    // Put the file into the R2 bucket
-    await c.env.ASSETS.put(key, await file.arrayBuffer(), {
-      httpMetadata: { contentType: file.type },
+    // Put the file into the KV namespace
+    await c.env.ASSETS_KV.put(key, await file.arrayBuffer(), {
+      metadata: { contentType: file.type },
     })
 
     // Return the public URL for the file
@@ -36,27 +36,30 @@ uploadRouter.post('/', async (c) => {
   }
 })
 
-// Add a route to serve the uploaded assets from R2
+// Add a route to serve the uploaded assets from KV
 export const assetsRouter = new Hono<{ Bindings: Env }>()
 
 assetsRouter.get('/*', async (c) => {
   const key = c.req.path.replace('/api/assets/', '')
   
-  if (!c.env.ASSETS) {
-    return c.text('R2 bucket not configured', 500)
+  if (!c.env.ASSETS_KV) {
+    return c.text('KV bucket not configured', 500)
   }
 
-  const object = await c.env.ASSETS.get(key)
+  const { value, metadata } = await c.env.ASSETS_KV.getWithMetadata<{ contentType: string }>(key, 'arrayBuffer')
 
-  if (!object) {
+  if (!value) {
     return c.text('Not found', 404)
   }
 
   const headers = new Headers()
-  object.writeHttpMetadata(headers)
-  headers.set('etag', object.httpEtag)
+  if (metadata?.contentType) {
+    headers.set('Content-Type', metadata.contentType)
+  }
+  // Cache for a year since assets are immutable
+  headers.set('Cache-Control', 'public, max-age=31536000')
 
-  return new Response(object.body, {
+  return new Response(value, {
     headers,
   })
 })
