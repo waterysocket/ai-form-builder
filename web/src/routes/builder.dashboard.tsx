@@ -47,7 +47,7 @@ function DashboardPage() {
     if (savedTheme && savedTheme !== 'default') {
       document.documentElement.classList.add(`theme-${savedTheme}`)
     }
-  }, [fetchData])
+  }, [])
 
   const fetchData = async () => {
     try {
