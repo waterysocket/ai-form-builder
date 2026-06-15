@@ -1,5 +1,5 @@
 // Basic API client for FormCraft
-const API_URL = import.meta.env.VITE_API_URL || '/api'
+const API_URL = '/api'
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   // In a real app we might pass tokens, for now we assume auth is handled via cookies
