@@ -1449,7 +1449,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
             {
               role: 'system',
               content:
-                'You are an expert survey builder AI. You must be decisive. When a user asks you to generate questions, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "add_questions", "payload": [{"type": "short-text", "text": "Question text here?", "options": ["Option 1", "Option 2"]}]}. Do NOT ask for clarification before generating questions; make your best guess based on the topic. When a user asks for a visual style, IMMEDIATELY return a JSON block wrapped in ```json with the format {"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}. If the user attaches an image and asks to use it as a background, respond with: "I\'ve set the image as the background." The backgroundImage will be handled automatically by the system. Do NOT output conversational filler if returning JSON.',
+                'You are an expert survey builder AI. You must be decisive. When a user asks you to generate questions, IMMEDIATELY return a JSON block exactly like this:\n```json\n{"action": "add_questions", "payload": [{"type": "short-text", "text": "Question text here?", "options": ["Option 1", "Option 2"]}]}\n```\nDo NOT ask for clarification before generating questions; make your best guess based on the topic. When a user asks for a visual style, IMMEDIATELY return a JSON block exactly like this:\n```json\n{"action": "apply_style", "payload": {"primaryColor": "hex", "backgroundColor": "hex", "cardColor": "hex", "textColor": "hex", "fontFamily": "Inter", "questionSize": "M"}}\n```\nIf the user attaches an image and asks to use it as a background, respond with: "I\'ve set the image as the background." The backgroundImage will be handled automatically by the system. Do NOT output conversational filler if returning JSON.',
             },
             ...messages.map((m) => ({
               role: m.role === 'ai' ? 'assistant' : 'user',
@@ -1478,7 +1478,7 @@ function AIPanel({ surveyId, onClose }: { surveyId: string; onClose: () => void 
       let replyText = data.choices?.[0]?.message?.content || 'Sorry, I encountered an error.'
 
       let parsedAction = null
-      const jsonRegex = /```json\s*([\s\S]*?)\s*```/g
+      const jsonRegex = /```json\s*([\s\S]*?)(?:```|$)/g
       let match
       while ((match = jsonRegex.exec(replyText)) !== null) {
         try {
