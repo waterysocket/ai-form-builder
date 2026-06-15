@@ -247,10 +247,10 @@ export const useSurveyStore = create<SurveyStoreState>((set, get) => ({
   getSurvey: (id) => get().surveys.find((s) => s.id === id),
   getSurveyByPublicId: (pid) => get().surveys.find((s) => s.publicId === pid),
   createSurvey: () => {
-    const id = `survey-${Date.now()}`
+    const id = `fc-${Math.random().toString(36).slice(2, 8)}`
     const survey: Survey = {
       id,
-      publicId: `fc-${Math.random().toString(36).slice(2, 8)}`,
+      publicId: id,
       title: 'Untitled Survey',
       surveyType: 'survey',
       layoutMode: 'paginated',
