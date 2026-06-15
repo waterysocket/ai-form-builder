@@ -1,4 +1,5 @@
 import { RouterProvider } from '@tanstack/react-router'
+import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getRouter } from './router'
@@ -17,5 +18,6 @@ if (!rootEl) throw new Error('root element missing')
 createRoot(rootEl).render(
   <StrictMode>
     <RouterProvider router={router} />
+    <Analytics />
   </StrictMode>,
 )
