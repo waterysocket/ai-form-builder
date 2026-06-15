@@ -4,6 +4,31 @@ import { useEffect, useState } from 'react'
 import { Logo } from '@/components/Logo'
 import { useAuth } from '@/lib/store'
 
+/** Map OAuth error codes from the callback URL to user-friendly messages */
+const OAUTH_ERRORS: Record<string, string> = {
+  google_no_code: 'Google login was cancelled.',
+  google_not_configured: 'Google login is not configured on this server.',
+  google_token_failed: 'Google authentication failed. Please try again.',
+  google_userinfo_failed: 'Could not retrieve your Google profile.',
+  google_failed: 'Google login failed. Please try again.',
+  github_no_code: 'GitHub login was cancelled.',
+  github_not_configured: 'GitHub login is not configured on this server.',
+  github_token_failed: 'GitHub authentication failed. Please try again.',
+  github_token_missing: 'GitHub authentication failed. Please try again.',
+  github_user_failed: 'Could not retrieve your GitHub profile.',
+  github_no_email: 'No email found on your GitHub account. Please add a verified email.',
+  github_failed: 'GitHub login failed. Please try again.',
+}
+
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=; path=/; max-age=0`
+}
+
 export const Route = createFileRoute('/auth')({
   head: () => ({ meta: [{ title: 'Sign in — FormCraft' }] }),
   component: AuthPage,
@@ -20,6 +45,29 @@ function AuthPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
+
+  // Pick up OAuth redirect — the backend sets a short-lived cookie with user info
+  useEffect(() => {
+    const oauthRaw = getCookie('fc-oauth-user')
+    if (oauthRaw) {
+      try {
+        const { email, name } = JSON.parse(oauthRaw)
+        if (email) signIn(email, name)
+      } catch { /* ignore parse errors */ }
+      deleteCookie('fc-oauth-user')
+    }
+  }, [signIn])
+
+  // Pick up OAuth error from URL query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const oauthError = params.get('error')
+    if (oauthError) {
+      setError(OAUTH_ERRORS[oauthError] || 'Authentication failed. Please try again.')
+      // Clean the URL
+      window.history.replaceState({}, '', '/auth')
+    }
+  }, [])
 
   useEffect(() => {
     if (user) navigate({ to: '/builder/dashboard' })
@@ -197,8 +245,8 @@ function AuthPage() {
           </div>
 
           <div className="space-y-2.5">
-            <SocialBtn icon={<GoogleIcon />} label="Continue with Google" />
-            <SocialBtn icon={<GithubIcon />} label="Continue with GitHub" />
+            <SocialBtn icon={<GoogleIcon />} label="Continue with Google" onClick={() => { window.location.href = '/api/auth/oauth/google' }} />
+            <SocialBtn icon={<GithubIcon />} label="Continue with GitHub" onClick={() => { window.location.href = '/api/auth/oauth/github' }} />
           </div>
 
           <p className="mt-8 text-center text-sm text-text-secondary">
@@ -261,11 +309,12 @@ function Field({
   )
 }
 
-function SocialBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SocialBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
     <button
       type="button"
-      className="w-full inline-flex items-center justify-center gap-2.5 py-3 rounded-xl border border-border-strong hover:border-brand/40 hover:bg-surface-elevated text-sm font-medium text-text-primary transition"
+      onClick={onClick}
+      className="w-full inline-flex items-center justify-center gap-2.5 py-3 rounded-xl border border-border-strong hover:border-brand/40 hover:bg-surface-elevated text-sm font-medium text-text-primary transition cursor-pointer"
     >
       {icon} {label}
     </button>

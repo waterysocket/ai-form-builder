@@ -13,6 +13,10 @@ import { surveysRouter } from './routes/surveys'
 // Mount the authentication router
 app.route('/api/auth', authRouterWithMe)
 
+// Mount the OAuth router (Google & GitHub login)
+import { oauthRouter } from './routes/oauth'
+app.route('/api/auth/oauth', oauthRouter)
+
 // Mount the surveys router
 app.route('/api/surveys', surveysRouter)
 
