@@ -1,5 +1,6 @@
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
+import { Analytics } from '@vercel/analytics/react'
 import '../styles.css'
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -22,6 +23,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <Analytics />
     </QueryClientProvider>
   )
 }

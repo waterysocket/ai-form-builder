@@ -9,13 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AnalyticsSurveyIdRouteImport } from './routes/analytics.$surveyId'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuilderRouteImport } from './routes/builder'
-import { Route as BuilderSurveyIdRouteImport } from './routes/builder.$surveyId'
-import { Route as BuilderDashboardRouteImport } from './routes/builder.dashboard'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SPublicIdRouteImport } from './routes/s.$publicId'
+import { Route as BuilderDashboardRouteImport } from './routes/builder.dashboard'
+import { Route as BuilderSurveyIdRouteImport } from './routes/builder.$surveyId'
+import { Route as AnalyticsSurveyIdRouteImport } from './routes/analytics.$surveyId'
 
 const BuilderRoute = BuilderRouteImport.update({
   id: '/builder',
@@ -183,7 +183,8 @@ const BuilderRouteChildren: BuilderRouteChildren = {
   BuilderDashboardRoute: BuilderDashboardRoute,
 }
 
-const BuilderRouteWithChildren = BuilderRoute._addFileChildren(BuilderRouteChildren)
+const BuilderRouteWithChildren =
+  BuilderRoute._addFileChildren(BuilderRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
