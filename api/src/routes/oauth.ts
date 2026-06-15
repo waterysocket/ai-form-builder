@@ -47,6 +47,9 @@ function setSessionCookie(c: any, sessionToken: string) {
 }
 
 function getBaseUrl(c: any): string {
+  if (c.env.FRONTEND_URL) {
+    return c.env.FRONTEND_URL
+  }
   const proto = c.req.header('x-forwarded-proto') || 'http'
   const host = c.req.header('host') || 'localhost:5173'
   return `${proto}://${host}`

@@ -8,6 +8,9 @@
     "enabled": true
   },
   "workers_dev": true,
+  "vars": {
+    "FRONTEND_URL": "https://ai-form-builder-web-theta.vercel.app"
+  },
   // Add bindings here as you need them, then run `pnpm cf-typegen` to refresh `Env` types.
   "d1_databases": [
     {
